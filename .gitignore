@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -25,6 +26,9 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.egg-info/
+.installed.cfg
+*.egg
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -50,6 +54,9 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+*,cover
+.hypothesis/
+.pytest_cache
 
 # Translations
 *.mo
@@ -67,6 +74,9 @@ instance/
 
 # Scrapy stuff:
 .scrapy
+
+# Flask instance folder
+instance/
 
 # Sphinx documentation
 docs/_build/
@@ -160,3 +170,15 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+# MkDocs documentation
+/site/
+
+# PyBuilder
+target/
+
+# IPython Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+

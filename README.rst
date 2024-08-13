@@ -10,8 +10,8 @@ pytest-run-parallel
     :target: https://pypi.org/project/pytest-run-parallel
     :alt: Python versions
 
-.. image:: https://github.com/andfoy/pytest-run-parallel/actions/workflows/main.yml/badge.svg
-    :target: https://github.com/andfoy/pytest-run-parallel/actions/workflows/main.yml
+.. image:: https://github.com/Quansight-Labs/pytest-run-parallel/actions/workflows/main.yml/badge.svg
+    :target: https://github.com/Quansight-Labs/pytest-run-parallel/actions/workflows/main.yml
     :alt: See Build Status on GitHub Actions
 
 A simple pytest plugin to run tests concurrently
@@ -69,7 +69,7 @@ If you encounter any problems, please `file an issue`_ along with a detailed des
 .. _`GNU GPL v3.0`: https://www.gnu.org/licenses/gpl-3.0.txt
 .. _`Apache Software License 2.0`: https://www.apache.org/licenses/LICENSE-2.0
 .. _`cookiecutter-pytest-plugin`: https://github.com/pytest-dev/cookiecutter-pytest-plugin
-.. _`file an issue`: https://github.com/andfoy/pytest-run-parallel/issues
+.. _`file an issue`: https://github.com/Quansight-Labs/pytest-run-parallel/issues
 .. _`pytest`: https://github.com/pytest-dev/pytest
 .. _`tox`: https://tox.readthedocs.io/en/latest/
 .. _`pip`: https://pypi.org/project/pip/

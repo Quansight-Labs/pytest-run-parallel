@@ -11,7 +11,7 @@ def pytest_addoption(parser):
         dest='parallel_threads',
         default=1,
         type=int,
-        help='Set the number of threads used to execute each test concurrently'
+        help='Set the number of threads used to execute each test concurrently.'
     )
 
 

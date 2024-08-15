@@ -35,9 +35,13 @@ def wrap_function_parallel(fn, n_workers=10):
     barrier = threading.Barrier(n_workers)
     @functools.wraps(fn)
     def inner(*args, **kwargs):
+        errors = []
         def closure(*args, **kwargs):
             barrier.wait()
-            fn(*args, **kwargs)
+            try:
+                fn(*args, **kwargs)
+            except Exception as e:
+                errors.append(e)
 
         workers = []
         for _ in range(0, n_workers):
@@ -51,6 +55,9 @@ def wrap_function_parallel(fn, n_workers=10):
 
         for worker in workers:
             worker.join()
+
+        if len(errors) > 0:
+            raise errors[0]
     return inner
 
 

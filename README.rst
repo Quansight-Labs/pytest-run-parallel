@@ -18,19 +18,30 @@ A simple pytest plugin to run tests concurrently
 
 ----
 
-This `pytest`_ plugin was generated with `Cookiecutter`_ along with `@hackebrot`_'s `cookiecutter-pytest-plugin`_ template.
+This `pytest`_ plugin takes a set of tests that would be normally be run
+serially and execute them in parallel.
+
+The main goal of ``pytest-run-parallel`` is to discover thread-safety issues that
+could exist when using C libraries, this is of vital importance after `PEP703`_,
+which provides a path for a CPython implementation without depending on the
+Global Interpreter Lock (GIL), thus allowing for proper parallelism in programs
+that make use of the CPython interpreter.
+
+For more information about C thread-safety issues, please visit the
+free-threaded community guide at https://py-free-threading.github.io/
 
 
 Features
 --------
 
-* TODO
+* A global CLI flag ``--parallel-threads`` to run a test suite in parallel
+* A marker ``pytest.mark.parallel_threads`` to mark a single test to run in parallel
 
 
 Requirements
 ------------
 
-* TODO
+``pytest-run-parallel`` depends exclusively on ``pytest``.
 
 
 Installation
@@ -44,7 +55,46 @@ You can install "pytest-run-parallel" via `pip`_ from `PyPI`_::
 Usage
 -----
 
-* TODO
+This plugin has two modes of operation, one via the ``--parallel-threads`` pytest
+CLI flag, which allows a whole test suite to be run in parallel:
+
+.. code-block:: bash
+
+    pytest --parallel-threads=10 tests
+
+By default, the value of ``parallel-threads`` will be 1, thus not modifying the
+usual behaviour of pytest except when the flag is set.
+
+The other mode of operation occurs at the individual test level, via the
+``pytest.mark.parallel_threads`` marker:
+
+.. code-block:: python
+
+    # test_file.py
+    import pytest
+
+    @pytest.fixture
+    def my_fixture():
+        ...
+
+    @pytest.mark.parallel_threads(2)
+    def test_something_1():
+        # This test will be run in parallel using two concurrent threads
+        ...
+
+    @pytest.mark.parametrize('arg', [1, 2, 3])
+    @pytest.mark.parallel_threads(3)
+    def test_fixutre(my_fixture, arg):
+        # pytest markers and fixtures are supported as well
+        ...
+
+Both modes of operations are supported simultaneously, i.e.,
+
+.. code-block:: bash
+
+    # test_something_1 and test_fixutre will be run using their set number of
+    # threads; other tests will be run using 5 threads.
+    pytest -x -v --parallel-threads=5 test_file.py
 
 Contributing
 ------------
@@ -62,15 +112,10 @@ Issues
 
 If you encounter any problems, please `file an issue`_ along with a detailed description.
 
-.. _`Cookiecutter`: https://github.com/audreyr/cookiecutter
-.. _`@hackebrot`: https://github.com/hackebrot
 .. _`MIT`: https://opensource.org/licenses/MIT
-.. _`BSD-3`: https://opensource.org/licenses/BSD-3-Clause
-.. _`GNU GPL v3.0`: https://www.gnu.org/licenses/gpl-3.0.txt
-.. _`Apache Software License 2.0`: https://www.apache.org/licenses/LICENSE-2.0
-.. _`cookiecutter-pytest-plugin`: https://github.com/pytest-dev/cookiecutter-pytest-plugin
 .. _`file an issue`: https://github.com/Quansight-Labs/pytest-run-parallel/issues
 .. _`pytest`: https://github.com/pytest-dev/pytest
 .. _`tox`: https://tox.readthedocs.io/en/latest/
 .. _`pip`: https://pypi.org/project/pip/
 .. _`PyPI`: https://pypi.org/project
+.. _`PEP703`: https://peps.python.org/pep-0703/

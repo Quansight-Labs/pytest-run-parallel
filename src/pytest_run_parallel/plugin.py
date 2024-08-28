@@ -2,6 +2,8 @@ import pytest
 import threading
 import functools
 
+from _pytest.outcomes import Skipped, Failed
+
 
 def pytest_addoption(parser):
     group = parser.getgroup('run-parallel')
@@ -22,26 +24,27 @@ def pytest_configure(config):
         'using `n` threads.')
 
 
-@pytest.hookimpl(trylast=True)
-def pytest_generate_tests(metafunc):
-    n_workers = metafunc.config.option.parallel_threads
-    m = metafunc.definition.get_closest_marker('parallel_threads')
-    if m is not None:
-        n_workers = int(m.args[0])
-    setattr(metafunc.function, '_n_workers', n_workers)
-
-
 def wrap_function_parallel(fn, n_workers=10):
     barrier = threading.Barrier(n_workers)
     @functools.wraps(fn)
     def inner(*args, **kwargs):
         errors = []
+        skip = None
+        failed = None
         def closure(*args, **kwargs):
             barrier.wait()
             try:
                 fn(*args, **kwargs)
+            except Warning as w:
+                pass
             except Exception as e:
                 errors.append(e)
+            except Skipped as s:
+                nonlocal skip
+                skip = s.msg
+            except Failed as f:
+                nonlocal failed
+                failed = f
 
         workers = []
         for _ in range(0, n_workers):
@@ -56,14 +59,21 @@ def wrap_function_parallel(fn, n_workers=10):
         for worker in workers:
             worker.join()
 
-        if len(errors) > 0:
+        if skip is not None:
+            pytest.skip(skip)
+        elif failed is not None:
+            raise failed
+        elif len(errors) > 0:
             raise errors[0]
+
     return inner
 
 
-@pytest.hookimpl(wrapper=True)
-def pytest_pyfunc_call(pyfuncitem):
-    n_workers = getattr(pyfuncitem.obj, '_n_workers', None)
+@pytest.hookimpl(trylast=True)
+def pytest_itemcollected(item):
+    n_workers = item.config.option.parallel_threads
+    m = item.get_closest_marker('parallel_threads')
+    if m is not None:
+        n_workers = int(m.args[0])
     if n_workers is not None and n_workers > 1:
-        pyfuncitem.obj = wrap_function_parallel(pyfuncitem.obj, n_workers)
-    return (yield)
+        item.obj = wrap_function_parallel(item.obj, n_workers)

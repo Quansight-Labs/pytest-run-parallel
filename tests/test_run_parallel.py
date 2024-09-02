@@ -173,3 +173,80 @@ def test_help_message(pytester):
         # '             Set the number of threads used to execute each test concurrently.',
     ])
 
+
+def test_skip(pytester):
+    """Make sure that pytest accepts our fixture."""
+
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+
+        def test_skipped():
+            pytest.skip('Skip propagation')
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest(
+        '--parallel-threads=10',
+        '-v'
+    )
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        '*::test_skipped SKIPPED*',
+    ])
+
+    # make sure that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+
+
+def test_fail(pytester):
+    """Make sure that pytest accepts our fixture."""
+
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+
+        def test_should_fail():
+            pytest.fail()
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest(
+        '--parallel-threads=10',
+        '-v'
+    )
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        '*::test_should_fail FAILED*',
+    ])
+
+    # make sure that we get a '0' exit code for the testsuite
+    assert result.ret != 0
+
+
+def test_exception(pytester):
+    """Make sure that pytest accepts our fixture."""
+
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+
+        def test_should_fail():
+            raise ValueError('Should raise')
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest(
+        '--parallel-threads=10',
+        '-v'
+    )
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        '*::test_should_fail FAILED*',
+    ])
+
+    # make sure that we get a '0' exit code for the testsuite
+    assert result.ret != 0

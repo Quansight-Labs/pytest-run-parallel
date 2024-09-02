@@ -26,11 +26,9 @@ def pytest_configure(config):
 
 def wrap_function_parallel(fn, n_workers=10):
     barrier = threading.Barrier(n_workers)
-    lock = threading.Lock()
     @functools.wraps(fn)
     def inner(*args, **kwargs):
         errors = []
-        warns = []
         skip = None
         failed = None
         def closure(*args, **kwargs):
@@ -40,8 +38,7 @@ def wrap_function_parallel(fn, n_workers=10):
             except Warning as w:
                 pass
             except Exception as e:
-                with lock:
-                    errors.append(e)
+                errors.append(e)
             except Skipped as s:
                 nonlocal skip
                 skip = s.msg
@@ -62,14 +59,9 @@ def wrap_function_parallel(fn, n_workers=10):
         for worker in workers:
             worker.join()
 
-        # if len(warns) > 0:
-        #     warn = warns[0]
-        #     warnings.warn(str(warn), type(warn))
-
         if skip is not None:
             pytest.skip(skip)
         elif failed is not None:
-            # pytest.fail(failed)
             raise failed
         elif len(errors) > 0:
             raise errors[0]

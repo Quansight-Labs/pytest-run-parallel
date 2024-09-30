@@ -96,6 +96,33 @@ Both modes of operations are supported simultaneously, i.e.,
     # threads; other tests will be run using 5 threads.
     pytest -x -v --parallel-threads=5 test_file.py
 
+Additionally, ``pytest-run-parallel`` exposes the ``num_parallel_threads`` fixture
+which enable a test to be aware of the number of threads that are being spawned:
+
+.. code-block:: python
+
+    # test_file.py
+    import pytest
+
+    def test_skip_if_parallel(num_parallel_threads):
+        if num_parallel_threads > 1:
+            pytest.skip(reason='does not work in parallel')
+        ...
+
+Finally, the ``thread_comp`` fixture allows for parallel test debugging, by providing an
+instance of ``ThreadComparator``, whose ``__call__`` method allows to check if all the values
+produced by all threads during an specific execution step are the same:
+
+.. code-block:: python
+
+    # test_file.py
+    def test_same_execution_values(thread_comp):
+        a = 2
+        b = [3, 4, 5]
+        c = None
+        # Check that the values for a, b, c are the same across tests
+        thread_comp(a=a, b=b, c=c)
+
 Contributing
 ------------
 Contributions are very welcome. Tests can be run with `tox`_, please ensure

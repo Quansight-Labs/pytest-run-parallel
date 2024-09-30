@@ -250,3 +250,88 @@ def test_exception(pytester):
 
     # make sure that we get a '0' exit code for the testsuite
     assert result.ret != 0
+
+
+def test_num_parallel_threads_fixture(pytester):
+    """Test that the num_parallel_threads fixture works as expected."""
+
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+
+        def test_should_yield_global_threads(num_parallel_threads):
+            assert num_parallel_threads == 10
+
+        @pytest.mark.parallel_threads(2)
+        def test_should_yield_marker_threads(num_parallel_threads):
+            assert num_parallel_threads == 2
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest(
+        '--parallel-threads=10',
+        '-v'
+    )
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        '*::test_should_yield_global_threads PASSED*',
+        '*::test_should_yield_marker_threads PASSED*'
+    ])
+
+
+def test_thread_comp_fixture(pytester):
+    """Test that ThreadComparator works as expected."""
+
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import threading
+        import pytest
+
+        class Counter:
+            def __init__(self):
+                self._value = 0
+                self._lock = threading.Lock()
+
+            def get_value_and_increment(self):
+                with self._lock:
+                    value = int(self._value)
+                    self._value += 1
+                return value
+
+        def test_value_comparison(num_parallel_threads, thread_comp):
+            assert num_parallel_threads == 10
+            a = 1
+            b = [2, 'string', 1.0]
+            c = {'a': -4, 'b': 'str'}
+            d = float('nan')
+            e = float('inf')
+            f = {'a', 'b', '#'}
+            thread_comp(a=a, b=b, c=c, d=d, e=e, f=f)
+
+            # Ensure that the comparator can be used again
+            thread_comp(g=4)
+
+        @pytest.fixture
+        def counter(num_parallel_threads):
+            return Counter()
+
+        def test_comparison_fail(thread_comp, counter):
+            a = 4
+            pos = counter.get_value_and_increment()
+            if pos % 2 == 0:
+                a = -1
+            thread_comp(a=a)
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest(
+        '--parallel-threads=10',
+        '-v'
+    )
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        '*::test_value_comparison PASSED*',
+        '*::test_comparison_fail FAILED*'
+    ])

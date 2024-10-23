@@ -38,6 +38,6 @@ dependencies = [
     "pytest>=6.2.0",
 ]
 [project.urls]
-Repository = "https://github.com/andfoy/pytest-run-parallel"
+Repository = "https://github.com/Quansight-labs/pytest-run-parallel"
 [project.entry-points.pytest11]
 run-parallel = "pytest_run_parallel.plugin"

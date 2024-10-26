@@ -84,7 +84,7 @@ The other mode of operation occurs at the individual test level, via the
 
     @pytest.mark.parametrize('arg', [1, 2, 3])
     @pytest.mark.parallel_threads(3)
-    def test_fixutre(my_fixture, arg):
+    def test_fixture(my_fixture, arg):
         # pytest markers and fixtures are supported as well
         ...
 
@@ -92,7 +92,7 @@ Both modes of operations are supported simultaneously, i.e.,
 
 .. code-block:: bash
 
-    # test_something_1 and test_fixutre will be run using their set number of
+    # test_something_1 and test_fixture will be run using their set number of
     # threads; other tests will be run using 5 threads.
     pytest -x -v --parallel-threads=5 test_file.py
 

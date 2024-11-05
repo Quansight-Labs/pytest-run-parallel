@@ -1,4 +1,4 @@
-name: Pytest-run-parallel tests
+name: Tests
 
 on:
   push:
@@ -11,32 +11,35 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    name: Run tests with ${{ matrix.python-version }}
     strategy:
       fail-fast: false
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.13t', 'pypy-3.8']
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        if: ${{ !endsWith(matrix.python-version, 't') && matrix.python-version != '3.13' }}
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Setup free-threaded variables
-        if: ${{ endsWith(matrix.python-version, 't') }}
-        run: |
-          echo "FREE_THREADED=1" >> "$GITHUB_ENV"
-          echo "PYTHON_GIL=0" >> "$GITHUB_ENV"
-
-      - uses: deadsnakes/action@6c8b9b82fe0b4344f4b98f2775fcc395df45e494 # v3.1.0
-        if: ${{ endsWith(matrix.python-version, 't') || matrix.python-version == '3.13' }}
-        with:
-          python-version: "3.13"
-          nogil: ${{ env.FREE_THREADED == '1' }}
+      - uses: astral-sh/setup-uv@v3
 
       - name: Install tox
-        run: pip install tox
+        run: |
+          uv tool install \
+            --python-preference only-managed \
+            --python 3.13 \
+            tox \
+            --with tox-uv \
+            --with tox-gh
 
-      - name: Test
-        run: tox -e py
+      - name: Install Python
+        # We've installed Python 3.13 above already
+        if: matrix.python-version != '3.13'
+        run: uv python install --python-preference only-managed ${{ matrix.python-version }}
+
+      - name: Setup test suite
+        run: tox run -vv --notest --skip-missing-interpreters false
+        env:
+          TOX_GH_MAJOR_MINOR: ${{ matrix.python-version }}
+
+      - name: Run test suite
+        run: tox run --skip-pkg-install
+        env:
+          TOX_GH_MAJOR_MINOR: ${{ matrix.python-version }}

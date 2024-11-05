@@ -10,6 +10,10 @@ description = "A simple pytest plugin to run tests concurrently"
 version = "0.1.1-dev"
 readme = "README.rst"
 requires-python = ">=3.8"
+dependencies = [
+    "pytest>=6.2.0",
+]
+
 authors = [
     { name = "Quansight Labs", email = "emargffoy@quansight.com" },
 ]
@@ -29,15 +33,56 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "License :: OSI Approved :: MIT License",
 ]
-dependencies = [
-    "pytest>=6.2.0",
-]
+
 [project.urls]
 Repository = "https://github.com/Quansight-Labs/pytest-run-parallel"
 [project.entry-points.pytest11]
 run-parallel = "pytest_run_parallel.plugin"
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=5.0.0",
+    "pytest-order>=1.3.0",
+    "ruff>=0.7.2",
+]
+
+[tool.ruff]
+exclude = ["docs/conf.py"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.tox]
+env_list = ["py38", "py39", "py310", "py311", "py312", "py313", "py313t", "pypy3", "ruff"]
+
+[tool.tox.env_run_base]
+deps = ["pytest>=6.2.0", "pytest-cov", "pytest-order"]
+commands = [[
+    "pytest",
+    "-v",
+    "--cov-report", "lcov",
+    "--cov", "src/pytest_run_parallel",
+    "--cov", "tests",
+    "{posargs:tests}"
+]]
+
+[tool.tox.env.ruff]
+skip_install = true
+deps = ["ruff"]
+commands = [["ruff", "check"]]
+
+[tool.tox.gh.python]
+"3.8" = ["py38"]
+"3.9" = ["py39"]
+"3.10" = ["py310"]
+"3.11" = ["py311"]
+"3.12" = ["py312"]
+"3.13" = ["py313", "ruff"]
+"3.13t" = ["py313t"]
+"pypy-3.8" = ["pypy3"]

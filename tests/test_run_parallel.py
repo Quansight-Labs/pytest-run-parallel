@@ -167,7 +167,7 @@ def test_help_message(pytester):
         [
             "run-parallel:",
             "  --parallel-threads=PARALLEL_THREADS",
-            # '             Set the number of threads used to execute each test concurrently.',
+            "  --iterations=ITERATIONS",
         ]
     )
 
@@ -324,4 +324,168 @@ def test_thread_comp_fixture(pytester):
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         ["*::test_value_comparison PASSED*", "*::test_comparison_fail FAILED*"]
+    )
+
+
+def test_iterations_marker_one_thread(pytester):
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+        from threading import Lock
+
+        class Counter:
+            def __init__(self):
+                self._count = 0
+                self._lock = Lock()
+
+            def increase(self):
+                with self._lock:
+                    self._count += 1
+
+        @pytest.fixture(scope='session')
+        def counter():
+            return Counter()
+
+        @pytest.mark.order(1)
+        @pytest.mark.parallel_threads(1)
+        @pytest.mark.iterations(10)
+        def test_thread_increase(counter):
+            counter.increase()
+
+        @pytest.mark.order(2)
+        @pytest.mark.parallel_threads(1)
+        @pytest.mark.iterations(1)
+        def test_check_thread_count(counter):
+            assert counter._count == 10
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("-v")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_check_thread_count PASSED*",
+        ]
+    )
+
+    # make sure that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+
+
+def test_iterations_config_one_thread(pytester):
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+        from threading import Lock
+
+        class Counter:
+            def __init__(self):
+                self._count = 0
+                self._lock = Lock()
+
+            def increase(self):
+                with self._lock:
+                    self._count += 1
+
+        @pytest.fixture(scope='session')
+        def counter():
+            return Counter()
+
+        @pytest.mark.order(1)
+        @pytest.mark.parallel_threads(1)
+        def test_thread_increase(counter):
+            counter.increase()
+
+        @pytest.mark.order(2)
+        @pytest.mark.parallel_threads(1)
+        @pytest.mark.iterations(1)
+        def test_check_thread_count(counter):
+            assert counter._count == 10
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("--iterations=10", "-v")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_check_thread_count PASSED*",
+        ]
+    )
+
+    # make sure that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+
+
+def test_multiple_iterations_multiple_threads(pytester):
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+        from threading import Lock
+
+        class Counter:
+            def __init__(self):
+                self._count = 0
+                self._lock = Lock()
+
+            def increase(self):
+                with self._lock:
+                    self._count += 1
+
+        @pytest.fixture(scope='session')
+        def counter():
+            return Counter()
+
+        @pytest.mark.order(1)
+        @pytest.mark.parallel_threads(10)
+        @pytest.mark.iterations(10)
+        def test_thread_increase(counter):
+            counter.increase()
+
+        @pytest.mark.order(2)
+        @pytest.mark.parallel_threads(1)
+        @pytest.mark.iterations(1)
+        def test_check_thread_count(counter):
+            assert counter._count == 10 * 10
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("-v")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_check_thread_count PASSED*",
+        ]
+    )
+
+    # make sure that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+
+
+def test_num_iterations_fixture(pytester):
+    """Test that the num_iterations fixture works as expected."""
+
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+
+        def test_should_yield_global_threads(num_iterations):
+            assert num_iterations == 10
+
+        @pytest.mark.iterations(2)
+        def test_should_yield_marker_threads(num_iterations):
+            assert num_iterations == 2
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("--iterations=10", "-v")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_should_yield_global_threads PASSED*",
+            "*::test_should_yield_marker_threads PASSED*",
+        ]
     )

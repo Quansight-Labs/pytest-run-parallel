@@ -23,6 +23,14 @@ def pytest_addoption(parser):
         type=int,
         help="Set the number of threads used to execute each test concurrently.",
     )
+    group.addoption(
+        "--iterations",
+        action="store",
+        dest="iterations",
+        default=1,
+        type=int,
+        help="Set the number of threads used to execute each test concurrently.",
+    )
 
 
 def pytest_configure(config):
@@ -31,9 +39,13 @@ def pytest_configure(config):
         "parallel_threads(n): run the given test function in parallel "
         "using `n` threads.",
     )
+    config.addinivalue_line(
+        "markers",
+        "iterations(n): run the given test function `n` times in each thread",
+    )
 
 
-def wrap_function_parallel(fn, n_workers=10):
+def wrap_function_parallel(fn, n_workers, n_iterations):
     barrier = threading.Barrier(n_workers)
 
     @functools.wraps(fn)
@@ -43,19 +55,20 @@ def wrap_function_parallel(fn, n_workers=10):
         failed = None
 
         def closure(*args, **kwargs):
-            barrier.wait()
-            try:
-                fn(*args, **kwargs)
-            except Warning:
-                pass
-            except Exception as e:
-                errors.append(e)
-            except Skipped as s:
-                nonlocal skip
-                skip = s.msg
-            except Failed as f:
-                nonlocal failed
-                failed = f
+            for _ in range(n_iterations):
+                barrier.wait()
+                try:
+                    fn(*args, **kwargs)
+                except Warning:
+                    pass
+                except Exception as e:
+                    errors.append(e)
+                except Skipped as s:
+                    nonlocal skip
+                    skip = s.msg
+                except Failed as f:
+                    nonlocal failed
+                    failed = f
 
         workers = []
         for _ in range(0, n_workers):
@@ -74,7 +87,7 @@ def wrap_function_parallel(fn, n_workers=10):
             pytest.skip(skip)
         elif failed is not None:
             raise failed
-        elif len(errors) > 0:
+        elif errors:
             raise errors[0]
 
     return inner
@@ -83,11 +96,18 @@ def wrap_function_parallel(fn, n_workers=10):
 @pytest.hookimpl(trylast=True)
 def pytest_itemcollected(item):
     n_workers = item.config.option.parallel_threads
+    n_iterations = item.config.option.iterations
+
     m = item.get_closest_marker("parallel_threads")
     if m is not None:
         n_workers = int(m.args[0])
-    if n_workers is not None and n_workers > 1:
-        item.obj = wrap_function_parallel(item.obj, n_workers)
+
+    m = item.get_closest_marker("iterations")
+    if m is not None:
+        n_iterations = int(m.args[0])
+
+    if n_workers > 1 or n_iterations > 1:
+        item.obj = wrap_function_parallel(item.obj, n_workers, n_iterations)
 
 
 @pytest.fixture
@@ -98,6 +118,16 @@ def num_parallel_threads(request):
     if m is not None:
         n_workers = int(m.args[0])
     return n_workers
+
+
+@pytest.fixture
+def num_iterations(request):
+    node = request.node
+    n_iterations = request.config.option.iterations
+    m = node.get_closest_marker("iterations")
+    if m is not None:
+        n_iterations = int(m.args[0])
+    return n_iterations
 
 
 class ThreadComparator:

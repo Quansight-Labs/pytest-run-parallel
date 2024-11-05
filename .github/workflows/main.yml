@@ -1,4 +1,4 @@
-name: Pytest-run-parallel tests
+name: Tests
 
 on:
   push:
@@ -11,12 +11,35 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    name: Run tests with ${{ matrix.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.13t', 'pypy-3.8']
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
 
       - name: Install tox
-        run: uv tool install tox --with tox-uv
+        run: |
+          uv tool install \
+            --python-preference only-managed \
+            --python 3.13 \
+            tox \
+            --with tox-uv \
+            --with tox-gh
 
-      - name: Test
-        run: tox
+      - name: Install Python
+        # We've installed Python 3.13 above already
+        if: matrix.python-version != '3.13'
+        run: uv python install --python-preference only-managed ${{ matrix.python-version }}
+
+      - name: Setup test suite
+        run: tox run -vv --notest --skip-missing-interpreters false
+        env:
+          TOX_GH_MAJOR_MINOR: ${{ matrix.python-version }}
+
+      - name: Run test suite
+        run: tox run --skip-pkg-install
+        env:
+          TOX_GH_MAJOR_MINOR: ${{ matrix.python-version }}

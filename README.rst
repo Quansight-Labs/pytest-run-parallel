@@ -34,8 +34,18 @@ free-threaded community guide at https://py-free-threading.github.io/
 Features
 --------
 
-* A global CLI flag ``--parallel-threads`` to run a test suite in parallel
-* A marker ``pytest.mark.parallel_threads`` to mark a single test to run in parallel
+* Two global CLI flags:
+    * ``--parallel-threads`` to run a test suite in parallel
+    * ``--iterations`` to run multiple times in each thread
+* Two corresponding markers:
+    * ``pytest.mark.parallel_threads(n)`` to mark a single test to run in
+      parallel in ``n`` threads
+    * ``pytest.mark.iterations(n)`` to mark a single test to run ``n`` times
+      in each thread
+* And the corresponding fixtures:
+    * ``num_parallel_threads``: The number of threads the test will run in
+    * ``num_iterations``: The number of iterations the test will run in each
+      thread
 
 
 Requirements
@@ -55,18 +65,22 @@ You can install "pytest-run-parallel" via `pip`_ from `PyPI`_::
 Usage
 -----
 
-This plugin has two modes of operation, one via the ``--parallel-threads`` pytest
-CLI flag, which allows a whole test suite to be run in parallel:
+This plugin has two modes of operation, one via the ``--parallel-threads`` and
+``--iterations`` pytest CLI flags, which allows a whole test suite to be run
+in parallel:
 
 .. code-block:: bash
 
-    pytest --parallel-threads=10 tests
+    pytest --parallel-threads=10 --iterations=10 tests
 
-By default, the value of ``parallel-threads`` will be 1, thus not modifying the
+By default, the value for both flags will be 1, thus not modifying the
 usual behaviour of pytest except when the flag is set.
 
+Note that using ``pytest-xdist`` and setting ``iterations`` to a number greater
+than one might cause tests to run even more times than intended.
+
 The other mode of operation occurs at the individual test level, via the
-``pytest.mark.parallel_threads`` marker:
+``pytest.mark.parallel_threads`` and ``pytest.mark.iterations`` markers:
 
 .. code-block:: python
 
@@ -78,8 +92,10 @@ The other mode of operation occurs at the individual test level, via the
         ...
 
     @pytest.mark.parallel_threads(2)
+    @pytest.mark.iterations(10)
     def test_something_1():
         # This test will be run in parallel using two concurrent threads
+        # and 10 times in each thread
         ...
 
     @pytest.mark.parametrize('arg', [1, 2, 3])
@@ -96,8 +112,9 @@ Both modes of operations are supported simultaneously, i.e.,
     # threads; other tests will be run using 5 threads.
     pytest -x -v --parallel-threads=5 test_file.py
 
-Additionally, ``pytest-run-parallel`` exposes the ``num_parallel_threads`` fixture
-which enable a test to be aware of the number of threads that are being spawned:
+Additionally, ``pytest-run-parallel`` exposes the ``num_parallel_threads`` and
+``num_iterations`` fixtures which enable a test to be aware of the number of
+threads that are being spawned and the number of iterations each test will run:
 
 .. code-block:: python
 
@@ -125,6 +142,7 @@ produced by all threads during an specific execution step are the same:
 
 Contributing
 ------------
+
 Contributions are very welcome. Tests can be run with `tox`_, please ensure
 the coverage at least stays the same before you submit a pull request.
 

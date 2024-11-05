@@ -76,6 +76,9 @@ in parallel:
 By default, the value for both flags will be 1, thus not modifying the
 usual behaviour of pytest except when the flag is set.
 
+Note that using ``pytest-xdist`` and setting ``iterations`` to a number greater
+than one might cause tests to run even more times than intended.
+
 The other mode of operation occurs at the individual test level, via the
 ``pytest.mark.parallel_threads`` and ``pytest.mark.iterations`` markers:
 

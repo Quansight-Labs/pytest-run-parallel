@@ -1,4 +1,3 @@
-
 def test_default_threads(pytester):
     """Make sure that pytest accepts our fixture."""
 
@@ -31,15 +30,14 @@ def test_default_threads(pytester):
     """)
 
     # run pytest with the following cmd args
-    result = pytester.runpytest(
-        '--parallel-threads=10',
-        '-v'
-    )
+    result = pytester.runpytest("--parallel-threads=10", "-v")
 
     # fnmatch_lines does an assertion internally
-    result.stdout.fnmatch_lines([
-        '*::test_check_thread_count PASSED*',
-    ])
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_check_thread_count PASSED*",
+        ]
+    )
 
     # make sure that we get a '0' exit code for the testsuite
     assert result.ret == 0
@@ -89,16 +87,15 @@ def test_marker(pytester):
     """)
 
     # run pytest with the following cmd args
-    result = pytester.runpytest(
-        '--parallel-threads=10',
-        '-v'
-    )
+    result = pytester.runpytest("--parallel-threads=10", "-v")
 
     # fnmatch_lines does an assertion internally
-    result.stdout.fnmatch_lines([
-        '*::test_check_thread_count PASSED*',
-        '*::test_check_thread_count2 PASSED*',
-    ])
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_check_thread_count PASSED*",
+            "*::test_check_thread_count2 PASSED*",
+        ]
+    )
 
     # make sure that we get a '0' exit code for the testsuite
     assert result.ret == 0
@@ -147,16 +144,15 @@ def test_unittest_compat(pytester):
     """)
 
     # run pytest with the following cmd args
-    result = pytester.runpytest(
-        '--parallel-threads=10',
-        '-v'
-    )
+    result = pytester.runpytest("--parallel-threads=10", "-v")
 
     # fnmatch_lines does an assertion internally
-    result.stdout.fnmatch_lines([
-        '*::test_check_thread_count PASSED*',
-        '*::test_check_thread_count2 PASSED*',
-    ])
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_check_thread_count PASSED*",
+            "*::test_check_thread_count2 PASSED*",
+        ]
+    )
 
     # make sure that we get a '0' exit code for the testsuite
     assert result.ret == 0
@@ -164,14 +160,16 @@ def test_unittest_compat(pytester):
 
 def test_help_message(pytester):
     result = pytester.runpytest(
-        '--help',
+        "--help",
     )
     # fnmatch_lines does an assertion internally
-    result.stdout.fnmatch_lines([
-        'run-parallel:',
-        '  --parallel-threads=PARALLEL_THREADS'
-        # '             Set the number of threads used to execute each test concurrently.',
-    ])
+    result.stdout.fnmatch_lines(
+        [
+            "run-parallel:",
+            "  --parallel-threads=PARALLEL_THREADS",
+            # '             Set the number of threads used to execute each test concurrently.',
+        ]
+    )
 
 
 def test_skip(pytester):
@@ -186,15 +184,14 @@ def test_skip(pytester):
     """)
 
     # run pytest with the following cmd args
-    result = pytester.runpytest(
-        '--parallel-threads=10',
-        '-v'
-    )
+    result = pytester.runpytest("--parallel-threads=10", "-v")
 
     # fnmatch_lines does an assertion internally
-    result.stdout.fnmatch_lines([
-        '*::test_skipped SKIPPED*',
-    ])
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_skipped SKIPPED*",
+        ]
+    )
 
     # make sure that we get a '0' exit code for the testsuite
     assert result.ret == 0
@@ -212,15 +209,14 @@ def test_fail(pytester):
     """)
 
     # run pytest with the following cmd args
-    result = pytester.runpytest(
-        '--parallel-threads=10',
-        '-v'
-    )
+    result = pytester.runpytest("--parallel-threads=10", "-v")
 
     # fnmatch_lines does an assertion internally
-    result.stdout.fnmatch_lines([
-        '*::test_should_fail FAILED*',
-    ])
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_should_fail FAILED*",
+        ]
+    )
 
     # make sure that we get a '0' exit code for the testsuite
     assert result.ret != 0
@@ -238,15 +234,14 @@ def test_exception(pytester):
     """)
 
     # run pytest with the following cmd args
-    result = pytester.runpytest(
-        '--parallel-threads=10',
-        '-v'
-    )
+    result = pytester.runpytest("--parallel-threads=10", "-v")
 
     # fnmatch_lines does an assertion internally
-    result.stdout.fnmatch_lines([
-        '*::test_should_fail FAILED*',
-    ])
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_should_fail FAILED*",
+        ]
+    )
 
     # make sure that we get a '0' exit code for the testsuite
     assert result.ret != 0
@@ -268,16 +263,15 @@ def test_num_parallel_threads_fixture(pytester):
     """)
 
     # run pytest with the following cmd args
-    result = pytester.runpytest(
-        '--parallel-threads=10',
-        '-v'
-    )
+    result = pytester.runpytest("--parallel-threads=10", "-v")
 
     # fnmatch_lines does an assertion internally
-    result.stdout.fnmatch_lines([
-        '*::test_should_yield_global_threads PASSED*',
-        '*::test_should_yield_marker_threads PASSED*'
-    ])
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_should_yield_global_threads PASSED*",
+            "*::test_should_yield_marker_threads PASSED*",
+        ]
+    )
 
 
 def test_thread_comp_fixture(pytester):
@@ -325,13 +319,9 @@ def test_thread_comp_fixture(pytester):
     """)
 
     # run pytest with the following cmd args
-    result = pytester.runpytest(
-        '--parallel-threads=10',
-        '-v'
-    )
+    result = pytester.runpytest("--parallel-threads=10", "-v")
 
     # fnmatch_lines does an assertion internally
-    result.stdout.fnmatch_lines([
-        '*::test_value_comparison PASSED*',
-        '*::test_comparison_fail FAILED*'
-    ])
+    result.stdout.fnmatch_lines(
+        ["*::test_value_comparison PASSED*", "*::test_comparison_fail FAILED*"]
+    )

@@ -1,48 +1,52 @@
-import pytest
-import threading
 import functools
+import threading
 import types
 
-from _pytest.outcomes import Skipped, Failed
+import pytest
+from _pytest.outcomes import Failed, Skipped
 
 try:
     import numpy as np
+
     numpy_available = True
 except ImportError:
     numpy_available = False
 
 
 def pytest_addoption(parser):
-    group = parser.getgroup('run-parallel')
+    group = parser.getgroup("run-parallel")
     group.addoption(
-        '--parallel-threads',
-        action='store',
-        dest='parallel_threads',
+        "--parallel-threads",
+        action="store",
+        dest="parallel_threads",
         default=1,
         type=int,
-        help='Set the number of threads used to execute each test concurrently.'
+        help="Set the number of threads used to execute each test concurrently.",
     )
 
 
 def pytest_configure(config):
     config.addinivalue_line(
-        'markers',
-        'parallel_threads(n): run the given test function in parallel '
-        'using `n` threads.')
+        "markers",
+        "parallel_threads(n): run the given test function in parallel "
+        "using `n` threads.",
+    )
 
 
 def wrap_function_parallel(fn, n_workers=10):
     barrier = threading.Barrier(n_workers)
+
     @functools.wraps(fn)
     def inner(*args, **kwargs):
         errors = []
         skip = None
         failed = None
+
         def closure(*args, **kwargs):
             barrier.wait()
             try:
                 fn(*args, **kwargs)
-            except Warning as w:
+            except Warning:
                 pass
             except Exception as e:
                 errors.append(e)
@@ -56,9 +60,9 @@ def wrap_function_parallel(fn, n_workers=10):
         workers = []
         for _ in range(0, n_workers):
             worker_kwargs = kwargs
-            workers.append(threading.Thread(
-                target=closure,
-                args=args, kwargs=worker_kwargs))
+            workers.append(
+                threading.Thread(target=closure, args=args, kwargs=worker_kwargs)
+            )
 
         for worker in workers:
             worker.start()
@@ -79,7 +83,7 @@ def wrap_function_parallel(fn, n_workers=10):
 @pytest.hookimpl(trylast=True)
 def pytest_itemcollected(item):
     n_workers = item.config.option.parallel_threads
-    m = item.get_closest_marker('parallel_threads')
+    m = item.get_closest_marker("parallel_threads")
     if m is not None:
         n_workers = int(m.args[0])
     if n_workers is not None and n_workers > 1:
@@ -90,14 +94,13 @@ def pytest_itemcollected(item):
 def num_parallel_threads(request):
     node = request.node
     n_workers = request.config.option.parallel_threads
-    m = node.get_closest_marker('parallel_threads')
+    m = node.get_closest_marker("parallel_threads")
     if m is not None:
         n_workers = int(m.args[0])
     return n_workers
 
 
 class ThreadComparator:
-
     def __init__(self, n_threads):
         self._barrier = threading.Barrier(n_threads)
         self._reset_evt = threading.Event()
@@ -147,8 +150,7 @@ class ThreadComparator:
                             if len(value_a.shape) == 0:
                                 assert value_a == value_b
                             else:
-                                assert np.allclose(
-                                    value_a, value_b, equal_nan=True)
+                                assert np.allclose(value_a, value_b, equal_nan=True)
                         elif isinstance(value_a, types.FunctionType):
                             assert id(value_a) == id(value_b)
                         elif value_a != value_a:

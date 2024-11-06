@@ -489,3 +489,26 @@ def test_num_iterations_fixture(pytester):
             "*::test_should_yield_marker_threads PASSED*",
         ]
     )
+
+
+def test_skipif_marker_works(pytester):
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+
+        VAR = 1
+
+        @pytest.mark.skipif('VAR == 1', reason='VAR is 1')
+        def test_should_skip():
+            pass
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_should_skip SKIPPED*",
+        ]
+    )

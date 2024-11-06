@@ -3,7 +3,7 @@ import threading
 import types
 
 import pytest
-from _pytest.outcomes import Failed, Skipped
+import _pytest.outcomes
 
 try:
     import numpy as np
@@ -63,10 +63,10 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
                     pass
                 except Exception as e:
                     errors.append(e)
-                except Skipped as s:
+                except _pytest.outcomes.Skipped as s:
                     nonlocal skip
                     skip = s.msg
-                except Failed as f:
+                except _pytest.outcomes.Failed as f:
                     nonlocal failed
                     failed = f
 
@@ -107,7 +107,11 @@ def pytest_itemcollected(item):
         n_iterations = int(m.args[0])
 
     if n_workers > 1 or n_iterations > 1:
+        original_globals = item.obj.__globals__
         item.obj = wrap_function_parallel(item.obj, n_workers, n_iterations)
+        for name in original_globals:
+            if name not in item.obj.__globals__:
+                item.obj.__globals__[name] = original_globals[name]
 
 
 @pytest.fixture

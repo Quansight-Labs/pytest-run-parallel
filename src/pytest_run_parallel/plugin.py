@@ -2,8 +2,8 @@ import functools
 import threading
 import types
 
-import pytest
 import _pytest.outcomes
+import pytest
 
 try:
     import numpy as np

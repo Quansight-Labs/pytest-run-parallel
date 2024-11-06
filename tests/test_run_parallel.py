@@ -490,6 +490,7 @@ def test_num_iterations_fixture(pytester):
         ]
     )
 
+
 def test_skipif_marker_works(pytester):
     # create a temporary pytest test module
     pytester.makepyfile("""
@@ -507,5 +508,7 @@ def test_skipif_marker_works(pytester):
 
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
-        ["*::test_should_skip SKIPPED*",]
+        [
+            "*::test_should_skip SKIPPED*",
+        ]
     )

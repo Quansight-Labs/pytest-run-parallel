@@ -37,9 +37,11 @@ Features
 * Two global CLI flags:
     * ``--parallel-threads`` to run a test suite in parallel
     * ``--iterations`` to run multiple times in each thread
-* Two corresponding markers:
+* Three corresponding markers:
     * ``pytest.mark.parallel_threads(n)`` to mark a single test to run in
       parallel in ``n`` threads
+    * ``pytest.mark.thread_unsafe`` to mark a single test to run in a single
+      thread. It is equivalent to using ``pytest.mark.parallel_threads(1)``
     * ``pytest.mark.iterations(n)`` to mark a single test to run ``n`` times
       in each thread
 * And the corresponding fixtures:

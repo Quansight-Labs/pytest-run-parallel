@@ -512,3 +512,24 @@ def test_skipif_marker_works(pytester):
             "*::test_should_skip SKIPPED*",
         ]
     )
+
+
+def test_thread_unsafe_marker(pytester):
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+
+        @pytest.mark.thread_unsafe
+        def test_should_run_single(num_parallel_threads):
+            assert num_parallel_threads == 1
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_should_run_single PASSED*",
+        ]
+    )

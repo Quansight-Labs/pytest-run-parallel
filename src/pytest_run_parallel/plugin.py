@@ -43,6 +43,10 @@ def pytest_configure(config):
         "markers",
         "iterations(n): run the given test function `n` times in each thread",
     )
+    config.addinivalue_line(
+        "markers",
+        "thread_unsafe: mark the test function as single-threaded",
+    )
 
 
 def wrap_function_parallel(fn, n_workers, n_iterations):
@@ -105,6 +109,11 @@ def pytest_itemcollected(item):
     m = item.get_closest_marker("iterations")
     if m is not None:
         n_iterations = int(m.args[0])
+
+    m = item.get_closest_marker("thread_unsafe")
+    if m is not None:
+        n_workers = 1
+        item.add_marker(pytest.mark.parallel_threads(1))
 
     if n_workers > 1 or n_iterations > 1:
         original_globals = item.obj.__globals__

@@ -51,8 +51,11 @@ class WarningNodeVisitor(ast.NodeVisitor):
 
 
 def identify_warnings_handling(fn):
-    src = inspect.getsource(fn)
-    tree = ast.parse(dedent(src))
+    try:
+        src = inspect.getsource(fn)
+        tree = ast.parse(dedent(src))
+    except Exception:
+        return False
     visitor = WarningNodeVisitor(fn)
     visitor.visit(tree)
     return visitor.catches_warns

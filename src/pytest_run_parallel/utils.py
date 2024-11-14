@@ -1,9 +1,8 @@
-
 import ast
 import inspect
+import threading
 import types
 from textwrap import dedent
-import threading
 
 try:
     import numpy as np
@@ -16,9 +15,11 @@ except ImportError:
 class WarningNodeVisitor(ast.NodeVisitor):
     def __init__(self, fn):
         self.catches_warns = False
-        self.blacklist = {('pytest', 'warns'),
-                 ('pytest', 'deprecated_call'),
-                 ('warnings', 'catch_warnings')}
+        self.blacklist = {
+            ("pytest", "warns"),
+            ("pytest", "deprecated_call"),
+            ("warnings", "catch_warnings"),
+        }
         modules = {mod for mod, _ in self.blacklist}
         self.modules_aliases = {}
         self.func_aliases = {}

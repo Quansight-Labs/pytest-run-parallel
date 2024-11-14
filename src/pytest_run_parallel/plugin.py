@@ -4,8 +4,7 @@ import threading
 import _pytest.outcomes
 import pytest
 
-from pytest_run_parallel.utils import (
-    ThreadComparator, identify_warnings_handling)
+from pytest_run_parallel.utils import ThreadComparator, identify_warnings_handling
 
 
 def pytest_addoption(parser):

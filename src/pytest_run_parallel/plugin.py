@@ -4,6 +4,10 @@ import types
 
 import _pytest.outcomes
 import pytest
+import inspect
+import ast
+from textwrap import dedent
+
 
 try:
     import numpy as np
@@ -97,6 +101,45 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
     return inner
 
 
+def identify_warnings_handling(fn):
+    src = inspect.getsource(fn)
+    tree = ast.parse(dedent(src))
+    catches_warns = False
+    blacklist = {('pytest', 'warns'),
+                 ('pytest', 'deprecated_call'),
+                 ('warnings', 'catch_warnings')}
+    modules = {mod for mod, _ in blacklist}
+    modules_aliases = {}
+    func_aliases = {}
+    for var_name in fn.__globals__:
+        value = fn.__globals__[var_name]
+        if inspect.ismodule(value):
+            if value.__name__ in modules:
+                modules_aliases[var_name] = value.__name__
+        elif inspect.isfunction(value):
+            real_name = value.__name__
+            for mod in modules:
+                if mod in value.__module__:
+                    func_aliases[var_name] = (mod, real_name)
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Attribute):
+                if isinstance(node.func.value, ast.Name):
+                    real_mod = node.func.value.id
+                    if real_mod in modules_aliases:
+                        real_mod = modules_aliases[real_mod]
+                    if (real_mod, node.func.attr) in blacklist:
+                        catches_warns = True
+                        break
+            elif isinstance(node.func, ast.Name):
+                if node.func.id in func_aliases:
+                    if func_aliases[node.func.id] in blacklist:
+                        catches_warns = True
+                        break
+    return catches_warns
+
+
 @pytest.hookimpl(trylast=True)
 def pytest_itemcollected(item):
     n_workers = item.config.option.parallel_threads
@@ -112,6 +155,10 @@ def pytest_itemcollected(item):
 
     m = item.get_closest_marker("thread_unsafe")
     if m is not None:
+        n_workers = 1
+        item.add_marker(pytest.mark.parallel_threads(1))
+
+    if identify_warnings_handling(item.obj):
         n_workers = 1
         item.add_marker(pytest.mark.parallel_threads(1))
 

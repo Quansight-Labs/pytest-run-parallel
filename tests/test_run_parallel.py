@@ -533,3 +533,50 @@ def test_thread_unsafe_marker(pytester):
             "*::test_should_run_single PASSED*",
         ]
     )
+
+
+def test_pytest_warns_detection(pytester):
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+        import warnings
+        import pytest as pyt
+        import warnings as w
+        from pytest import warns, deprecated_call
+        from warnings import catch_warnings
+
+        warns_alias = warns
+
+        def test_single_thread_warns_1(num_parallel_threads):
+            with pytest.warns(UserWarning):
+                warnings.warn('example', UserWarning)
+            assert num_parallel_threads == 1
+
+        def test_single_thread_warns_2(num_parallel_threads):
+            with warns(UserWarning):
+                warnings.warn('example', UserWarning)
+            assert num_parallel_threads == 1
+
+        def test_single_thread_warns_3(num_parallel_threads):
+            with pyt.warns(UserWarning):
+                warnings.warn('example', UserWarning)
+            assert num_parallel_threads == 1
+
+        def test_single_thread_warns_4(num_parallel_threads):
+            with warns_alias(UserWarning):
+                warnings.warn('example', UserWarning)
+            assert num_parallel_threads == 1
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_single_thread_warns_1 PASSED*",
+            "*::test_single_thread_warns_2 PASSED*",
+            "*::test_single_thread_warns_3 PASSED*",
+            "*::test_single_thread_warns_4 PASSED*",
+        ]
+    )

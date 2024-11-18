@@ -18,9 +18,13 @@ class WarningNodeVisitor(ast.NodeVisitor):
         self.blacklist = {
             ("pytest", "warns"),
             ("pytest", "deprecated_call"),
+            ("_pytest.recwarn", "warns"),
+            ("_pytest.recwarn", "deprecated_call"),
             ("warnings", "catch_warnings"),
         }
-        modules = {mod for mod, _ in self.blacklist}
+        modules = {mod.split('.')[0] for mod, _ in self.blacklist}
+        modules |= {mod for mod, _ in self.blacklist}
+
         self.modules_aliases = {}
         self.func_aliases = {}
         for var_name in fn.__globals__:
@@ -30,7 +34,7 @@ class WarningNodeVisitor(ast.NodeVisitor):
             elif inspect.isfunction(value):
                 real_name = value.__name__
                 for mod in modules:
-                    if mod in value.__module__:
+                    if mod == value.__module__:
                         self.func_aliases[var_name] = (mod, real_name)
                         break
 

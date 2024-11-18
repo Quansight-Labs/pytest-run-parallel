@@ -22,7 +22,7 @@ class WarningNodeVisitor(ast.NodeVisitor):
             ("_pytest.recwarn", "deprecated_call"),
             ("warnings", "catch_warnings"),
         }
-        modules = {mod.split('.')[0] for mod, _ in self.blacklist}
+        modules = {mod.split(".")[0] for mod, _ in self.blacklist}
         modules |= {mod for mod, _ in self.blacklist}
 
         self.modules_aliases = {}

@@ -96,6 +96,23 @@ You can install "pytest-run-parallel" via `pip`_ from `PyPI`_::
     $ pip install pytest-run-parallel
 
 
+Caveats
+-------
+
+Pytest itself is not thread-safe and it is not safe to share stateful pytest
+fixtures or marks between threads. Existing tests relying on setting up mutable
+state via a fixture will see the state shared between threads. Tests that
+dynamically set marks or share marks will also likely not be thread-safe. See
+the pytest documentation `for more detail
+<https://docs.pytest.org/en/stable/explanation/flaky.html#thread-safety>`_ and
+the community-maintained `free threaded Python porting guide
+<https://py-free-threading.github.io/porting/#pytest-is-not-thread-safe>`_ for
+more detail about using pytest in a multithreaded context on the free-threaded
+build of Python.
+
+We suggest marking tests that are incompatible with this plugin's current design
+with ``@pytest.mark.thread_unsafe``.
+
 Usage
 -----
 

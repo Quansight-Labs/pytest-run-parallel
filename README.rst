@@ -30,6 +30,43 @@ that make use of the CPython interpreter.
 For more information about C thread-safety issues, please visit the
 free-threaded community guide at https://py-free-threading.github.io/
 
+How it works
+------------
+
+This plugin is *not* an alternative to `pytest-xdist`_ and does not run all of
+the tests in a test suite simultaneously in a thread pool. Instead, it runs
+many instances of the same test in a thread pool. It is only useful as a
+tool to do multithreaded stress tests using an existing test suite and is not
+useful to speed up the execution of a test suite via multithreaded parallelism.
+
+Given an existing test taking arguments ``*args`` and keyword arguments
+``**kwargs``, this plugin creates a new test that is equivalent to the following
+Python code:
+
+.. code-block:: python
+
+      import threading
+      from concurrent.futures import ThreadPoolExecutor
+
+      def run_test(b, *args, **kwargs):
+          for _ in range(num_iterations):
+              b.wait()
+              execute_pytest_test(*args, **kwargs)
+
+
+      with ThreadPoolExecutor(max_workers=num_parallel_threads) as tpe:
+          b = threading.Barrer(num_parallel_threads)
+          for _ in range(num_parallel_threads):
+              tpe.submit(run_test, b, *args, **kwargs)
+
+
+
+The ``execute_pytest_test`` function hides some magic to ensure errors and
+failures get propagated correctly to the main testing thread. Using this plugin
+avoids the boilerplate of rewriting existing tests to run in parallel in a
+thread pool. Note that ``args`` and ``kwargs`` might include pytest marks and
+fixtures, and the way this plugin is currently written, those fixtures are
+shared between threads.
 
 Features
 --------
@@ -49,7 +86,6 @@ Features
     * ``num_iterations``: The number of iterations the test will run in each
       thread
 
-
 Requirements
 ------------
 
@@ -63,6 +99,23 @@ You can install "pytest-run-parallel" via `pip`_ from `PyPI`_::
 
     $ pip install pytest-run-parallel
 
+
+Caveats
+-------
+
+Pytest itself is not thread-safe and it is not safe to share stateful pytest
+fixtures or marks between threads. Existing tests relying on setting up mutable
+state via a fixture will see the state shared between threads. Tests that
+dynamically set marks or share marks will also likely not be thread-safe. See
+the pytest documentation `for more detail
+<https://docs.pytest.org/en/stable/explanation/flaky.html#thread-safety>`_ and
+the community-maintained `free threaded Python porting guide
+<https://py-free-threading.github.io/porting/#pytest-is-not-thread-safe>`_ for
+more detail about using pytest in a multithreaded context on the free-threaded
+build of Python.
+
+We suggest marking tests that are incompatible with this plugin's current design
+with ``@pytest.mark.thread_unsafe``.
 
 Usage
 -----
@@ -166,3 +219,4 @@ If you encounter any problems, please `file an issue`_ along with a detailed des
 .. _`pip`: https://pypi.org/project/pip/
 .. _`PyPI`: https://pypi.org/project
 .. _`PEP703`: https://peps.python.org/pep-0703/
+.. _`pytest-xdist`: https://pytest-xdist.readthedocs.io/

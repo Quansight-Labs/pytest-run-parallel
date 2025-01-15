@@ -33,31 +33,34 @@ free-threaded community guide at https://py-free-threading.github.io/
 How it works
 ------------
 
-Given an existing test, this plugin creates a new test that is equivalent to
-the following Python code:
+Given an existing test taking arguments ``*args`` and keyword arguments
+``**kwargs``, this plugin creates a new test that is equivalent to the following
+Python code:
 
 .. code-block:: python
 
       import threading
       from concurrent.futures import ThreadPoolExecutor
 
-      def run_test(b):
+      def run_test(b, *args, **kwargs):
           for _ in range(num_iterations):
               b.wait()
-              execute_pytest_test()
+              execute_pytest_test(*args, **kwargs)
 
 
       with ThreadPoolExecutor(max_workers=num_parallel_threads) as tpe:
           b = threading.Barrer(num_parallel_threads)
           for _ in range(num_parallel_threads):
-              tpe.submit(run_test, b)
+              tpe.submit(run_test, b, *args, **kwargs)
 
 
 
-The ``execute_pytest_test()`` function hides some magic to ensure errors and
+The ``execute_pytest_test`` function hides some magic to ensure errors and
 failures get propagated correctly to the main testing thread. Using this plugin
 avoids the boilerplate of rewriting existing tests to run in parallel in a
-thread pool.
+thread pool. Note that ``args`` and ``kwargs`` might include pytest marks and
+fixtures, and the way this plugin is currently written, those fixtures are
+shared between threads.
 
 This plugin is *not* an alternative to ``pytest-xdist`` and does not run tests
 simultaneously in parallel. It is only useful as a tool to do multithreaded

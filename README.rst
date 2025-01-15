@@ -33,6 +33,12 @@ free-threaded community guide at https://py-free-threading.github.io/
 How it works
 ------------
 
+This plugin is *not* an alternative to `pytest-xdist`_ and does not run all of
+the tests in a test suite simultaneously in a thread pool. Instead, it runs
+many instances of the same test in a thread pool. It is only useful as a
+tool to do multithreaded stress tests using an existing test suite and is not
+useful to speed up the execution of a test suite via multithreaded parallelism.
+
 Given an existing test taking arguments ``*args`` and keyword arguments
 ``**kwargs``, this plugin creates a new test that is equivalent to the following
 Python code:
@@ -61,11 +67,6 @@ avoids the boilerplate of rewriting existing tests to run in parallel in a
 thread pool. Note that ``args`` and ``kwargs`` might include pytest marks and
 fixtures, and the way this plugin is currently written, those fixtures are
 shared between threads.
-
-This plugin is *not* an alternative to ``pytest-xdist`` and does not run tests
-simultaneously in parallel. It is only useful as a tool to do multithreaded
-stress tests using an existing test suite.
-
 
 Features
 --------
@@ -218,3 +219,4 @@ If you encounter any problems, please `file an issue`_ along with a detailed des
 .. _`pip`: https://pypi.org/project/pip/
 .. _`PyPI`: https://pypi.org/project
 .. _`PEP703`: https://peps.python.org/pep-0703/
+.. _`pytest-xdist`: https://pytest-xdist.readthedocs.io/

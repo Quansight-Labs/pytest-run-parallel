@@ -30,6 +30,40 @@ that make use of the CPython interpreter.
 For more information about C thread-safety issues, please visit the
 free-threaded community guide at https://py-free-threading.github.io/
 
+How it works
+------------
+
+Given an existing test, this plugin creates a new test that is equivalent to
+the following Python code:
+
+.. code-block:: python
+
+      import threading
+      from concurrent.futures import ThreadPoolExecutor
+
+      def run_test(b):
+          for _ in range(num_iterations):
+              b.wait()
+              execute_pytest_test()
+
+
+      with ThreadPoolExecutor(max_workers=num_parallel_threads) as tpe:
+          b = threading.Barrer(num_parallel_threads)
+          for _ in range(num_parallel_threads):
+              tpe.submit(run_test, b)
+
+
+
+The ``execute_pytest_test()`` function hides some magic to ensure errors and
+failures get propagated correctly to the main testing thread. Using this plugin
+avoids the boilerplate of rewriting existing tests to run in parallel in a
+thread pool.
+
+This plugin is *not* an alternative to ``pytest-xdist`` and does not run tests
+simultaneously in parallel. It is only useful as a tool to do multithreaded
+stress tests using an existing test suite.
+
+
 Features
 --------
 
@@ -47,32 +81,6 @@ Features
     * ``num_parallel_threads``: The number of threads the test will run in
     * ``num_iterations``: The number of iterations the test will run in each
       thread
-
-Explanation
------------
-
-Given an existing test, this plugin creates a new test that is equivalent to
-the following:
-
-```python
-import threading
-from concurrent.futures import ThreadPoolExecutor
-
-def run_test(b):
-    b.wait()
-    for _ in range(num_iterations):
-        # execute the test with pytest
-
-
-with ThreadPoolExecutor(max_workers=num_parallel_threads) as tpe:
-    b = threading.Barrer(num_parallel_threads)
-    for _ in range(num_parallel_threads):
-        tpe.submit(run_test, b)
-
-```
-
-Using this plugin avoids the boilerplate of rewriting existing tests to run in
-parallel in a thread pool.
 
 Requirements
 ------------

@@ -127,3 +127,62 @@ class ThreadComparator:
                 self._reset_evt.set()
         else:
             self._reset_evt.wait()
+
+
+def get_logical_cpus():
+    try:
+        import psutil
+    except ImportError:
+        pass
+    else:
+        process = psutil.Process()
+        try:
+            cpu_cores = process.cpu_affinity()
+            if cpu_cores is not None:
+                return len(cpu_cores)
+        except AttributeError:
+            cpu_cores = psutil.cpu_count()
+            if cpu_cores is not None:
+                return cpu_cores
+
+    try:
+        from os import process_cpu_count
+    except ImportError:
+        pass
+    else:
+        cpu_cores = process_cpu_count()
+        if cpu_cores is not None:
+            return cpu_cores
+
+    try:
+        from os import sched_getaffinity
+    except ImportError:
+        pass
+    else:
+        cpu_cores = sched_getaffinity(0)
+        if cpu_cores is not None:
+            return len(cpu_cores)
+
+    from os import cpu_count
+
+    return cpu_count()
+
+
+def get_num_workers(config, item):
+    n_workers = config.option.parallel_threads
+    if n_workers == "auto":
+        logical_cpus = get_logical_cpus()
+        n_workers = logical_cpus if logical_cpus is not None else 1
+    else:
+        n_workers = int(n_workers)
+
+    marker = item.get_closest_marker("parallel_threads")
+    if marker is not None:
+        val = marker.args[0]
+        if val == "auto":
+            logical_cpus = get_logical_cpus()
+            n_workers = logical_cpus if logical_cpus is not None else 1
+        else:
+            n_workers = int(val)
+
+    return n_workers

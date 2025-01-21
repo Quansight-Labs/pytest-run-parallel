@@ -45,6 +45,11 @@ Repository = "https://github.com/Quansight-Labs/pytest-run-parallel"
 [project.entry-points.pytest11]
 run-parallel = "pytest_run_parallel.plugin"
 
+[project.optional-dependencies]
+psutil = [
+    "psutil>=6.1.1",
+]
+
 [dependency-groups]
 dev = [
     "pre-commit>=3.5.0",

@@ -609,7 +609,7 @@ def test_auto_detect_cpus_psutil_affinity(
     import psutil
 
     monkeypatch.setattr(
-        psutil.Process, "cpu_affinity", lambda self: set(range(10)), raising=False
+        psutil.Process, "cpu_affinity", lambda self: list(range(10)), raising=False
     )
 
     pytester.makepyfile("""
@@ -703,7 +703,7 @@ def test_auto_detect_sched_getaffinity(
         monkeypatch.setattr(psutil, "cpu_count", lambda: None)
 
     monkeypatch.setattr("os.process_cpu_count", lambda: None, raising=False)
-    monkeypatch.setattr("os.sched_getaffinity", lambda: 10)
+    monkeypatch.setattr("os.sched_getaffinity", lambda pid: list(range(10)))
 
     pytester.makepyfile("""
         def test_auto_detect_cpus(num_parallel_threads):

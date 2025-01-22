@@ -86,10 +86,18 @@ Features
     * ``num_iterations``: The number of iterations the test will run in each
       thread
 
+**Note**: It's possible to specify ``--parallel-threads=auto`` or
+``pytest.mark.parallel_threads("auto")`` which will let ``pytest-run-parallel``
+choose the number of logical CPU cores available to the testing process.
+If that cannot be determined, the number of physical CPU cores will be used.
+If that fails as well, it will fall back to running all tests single-threaded.
+
 Requirements
 ------------
 
-``pytest-run-parallel`` depends exclusively on ``pytest``.
+``pytest-run-parallel`` depends exclusively on ``pytest``. Optionally intalling
+``psutil`` will help with identifying the number of logical cores available to
+the testing process in systems where that's not possible with the Python stdlib.
 
 
 Installation
@@ -99,6 +107,9 @@ You can install "pytest-run-parallel" via `pip`_ from `PyPI`_::
 
     $ pip install pytest-run-parallel
 
+If you want to additionally install ``psutil`` you can run::
+
+    $ pip install pytest-run-parallel[psutil]
 
 Caveats
 -------

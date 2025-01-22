@@ -4,7 +4,11 @@ import threading
 import _pytest.outcomes
 import pytest
 
-from pytest_run_parallel.utils import ThreadComparator, identify_warnings_handling
+from pytest_run_parallel.utils import (
+    ThreadComparator,
+    get_num_workers,
+    identify_warnings_handling,
+)
 
 
 def pytest_addoption(parser):
@@ -14,7 +18,6 @@ def pytest_addoption(parser):
         action="store",
         dest="parallel_threads",
         default=1,
-        type=int,
         help="Set the number of threads used to execute each test concurrently.",
     )
     group.addoption(
@@ -93,13 +96,9 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
 
 @pytest.hookimpl(trylast=True)
 def pytest_itemcollected(item):
-    n_workers = item.config.option.parallel_threads
+    n_workers = get_num_workers(item.config, item)
+
     n_iterations = item.config.option.iterations
-
-    m = item.get_closest_marker("parallel_threads")
-    if m is not None:
-        n_workers = int(m.args[0])
-
     m = item.get_closest_marker("iterations")
     if m is not None:
         n_iterations = int(m.args[0])
@@ -123,12 +122,7 @@ def pytest_itemcollected(item):
 
 @pytest.fixture
 def num_parallel_threads(request):
-    node = request.node
-    n_workers = request.config.option.parallel_threads
-    m = node.get_closest_marker("parallel_threads")
-    if m is not None:
-        n_workers = int(m.args[0])
-    return n_workers
+    return get_num_workers(request.config, request.node)
 
 
 @pytest.fixture

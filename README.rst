@@ -55,7 +55,7 @@ Python code:
 
 
       with ThreadPoolExecutor(max_workers=num_parallel_threads) as tpe:
-          b = threading.Barrer(num_parallel_threads)
+          b = threading.Barrier(num_parallel_threads)
           for _ in range(num_parallel_threads):
               tpe.submit(run_test, b, *args, **kwargs)
 

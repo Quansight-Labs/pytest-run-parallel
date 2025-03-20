@@ -82,7 +82,10 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
             )
 
         for worker in workers:
-            worker.start()
+            try:
+                worker.start()
+            except Exception:
+                barrier.abort()
 
         for worker in workers:
             worker.join()

@@ -1,4 +1,5 @@
 import functools
+import sys
 import threading
 
 import _pytest.outcomes
@@ -48,6 +49,8 @@ def pytest_configure(config):
 
 def wrap_function_parallel(fn, n_workers, n_iterations):
     barrier = threading.Barrier(n_workers)
+    original_switch = sys.getswitchinterval()
+    sys.setswitchinterval(0.000001)
 
     @functools.wraps(fn)
     def inner(*args, **kwargs):
@@ -83,6 +86,8 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
 
         for worker in workers:
             worker.join()
+
+        sys.setswitchinterval(original_switch)
 
         if skip is not None:
             pytest.skip(skip)

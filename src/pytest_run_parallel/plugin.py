@@ -1,6 +1,6 @@
 import functools
-import threading
 import sys
+import threading
 
 import _pytest.outcomes
 import pytest

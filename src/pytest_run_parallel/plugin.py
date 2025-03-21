@@ -100,15 +100,15 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
 
 
 _thread_unsafe_fixtures = {
-    'capsys',
-    'recwarn',
+    "capsys",
+    "recwarn",
 }
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_itemcollected(item):
     n_workers = get_num_workers(item.config, item)
-    fixtures = getattr(item, 'fixturenames', ())
+    fixtures = getattr(item, "fixturenames", ())
 
     n_iterations = item.config.option.iterations
     m = item.get_closest_marker("iterations")

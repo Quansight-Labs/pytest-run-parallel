@@ -750,3 +750,27 @@ def test_auto_detect_cpu_count(
             "*::test_auto_detect_cpus PASSED*",
         ]
     )
+
+
+def test_thread_unsafe_fixtures(pytester):
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+
+        def test_capsys(capsys, num_parallel_threads):
+            assert num_parallel_threads == 1
+
+        def test_recwarn(recwarn, num_parallel_threads):
+            assert num_parallel_threads == 1
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_capsys PASSED*",
+            "*::test_recwarn PASSED*",
+        ]
+    )

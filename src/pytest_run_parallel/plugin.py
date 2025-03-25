@@ -82,13 +82,13 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
             )
 
         num_completed = 0
-        for worker in workers:
-            try:
+        try:
+            for worker in workers:
                 worker.start()
                 num_completed += 1
-            finally:
-                if num_completed < len(workers):
-                    barrier.abort()
+        finally:
+            if num_completed < len(workers):
+                barrier.abort()
 
         for worker in workers:
             worker.join()

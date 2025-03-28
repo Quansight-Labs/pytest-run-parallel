@@ -29,9 +29,13 @@ def pytest_addoption(parser):
         type=int,
         help="Set the number of threads used to execute each test concurrently.",
     )
-    parser.addini("thread_unsafe_fixtures",
-                  'list of thread-unsafe fixture names that cause a test to '
-                  'be run sequentially', type='linelist', default=[])
+    parser.addini(
+        "thread_unsafe_fixtures",
+        "list of thread-unsafe fixture names that cause a test to "
+        "be run sequentially",
+        type="linelist",
+        default=[],
+    )
 
 
 def pytest_configure(config):
@@ -133,9 +137,9 @@ def pytest_itemcollected(item):
         n_workers = 1
         item.add_marker(pytest.mark.parallel_threads(1))
 
-    unsafe_fixtures = (
-        _thread_unsafe_fixtures |
-        set(item.config.getini('thread_unsafe_fixtures')))
+    unsafe_fixtures = _thread_unsafe_fixtures | set(
+        item.config.getini("thread_unsafe_fixtures")
+    )
 
     if any(fixture in fixtures for fixture in unsafe_fixtures):
         n_workers = 1

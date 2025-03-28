@@ -793,6 +793,6 @@ def test_thread_unsafe_fixtures(pytester):
         [
             "*::test_capsys PASSED*",
             "*::test_recwarn PASSED*",
-            "*::test_custom_fixture_skip PASSED*"
+            "*::test_custom_fixture_skip PASSED*",
         ]
     )

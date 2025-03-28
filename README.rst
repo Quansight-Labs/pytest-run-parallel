@@ -132,13 +132,14 @@ Additionally, if a set of fixtures is known to be thread safe, tests can use
 them can be automatically marked as thread unsafe by declaring them under
 the `thread_unsafe_fixtures` option under pytest INI configuration file:
 
-```ini
-[pytest]
-thread_unsafe_fixtures =
-    fixture_1
-    fixture_2
-    ...
-```
+.. code-block:: ini
+
+    [pytest]
+    thread_unsafe_fixtures =
+        fixture_1
+        fixture_2
+        ...
+
 
 Usage
 -----

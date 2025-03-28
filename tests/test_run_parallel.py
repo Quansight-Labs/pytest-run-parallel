@@ -757,11 +757,32 @@ def test_thread_unsafe_fixtures(pytester):
     pytester.makepyfile("""
         import pytest
 
+        @pytest.fixture
+        def my_unsafe_fixture():
+            pass
+
+        @pytest.fixture
+        def my_unsafe_fixture_2():
+            pass
+
         def test_capsys(capsys, num_parallel_threads):
             assert num_parallel_threads == 1
 
         def test_recwarn(recwarn, num_parallel_threads):
             assert num_parallel_threads == 1
+
+        def test_custom_fixture_skip(my_unsafe_fixture, num_parallel_threads):
+            assert num_parallel_threads == 1
+
+        def test_custom_fixture_skip_2(my_unsafe_fixture_2, num_parallel_threads):
+            assert num_parallel_threads == 1
+    """)
+
+    pytester.makeini("""
+    [pytest]
+    thread_unsafe_fixtures =
+        my_unsafe_fixture
+        my_unsafe_fixture_2
     """)
 
     # run pytest with the following cmd args
@@ -772,5 +793,6 @@ def test_thread_unsafe_fixtures(pytester):
         [
             "*::test_capsys PASSED*",
             "*::test_recwarn PASSED*",
+            "*::test_custom_fixture_skip PASSED*"
         ]
     )

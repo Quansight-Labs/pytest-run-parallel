@@ -140,6 +140,16 @@ the `thread_unsafe_fixtures` option under pytest INI configuration file:
         fixture_2
         ...
 
+Or under the section `tool.pytest.ini_options` if using `pyproject.toml`:
+
+.. code-block:: toml
+
+    [tool.pytest.ini_options]
+    thread_unsafe_fixtures = [
+        'fixture_1',
+        'fixture_2',
+        ...
+    ]
 
 Usage
 -----

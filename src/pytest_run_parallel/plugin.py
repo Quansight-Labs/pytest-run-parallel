@@ -1,6 +1,7 @@
 import functools
 import sys
 import threading
+import warnings
 
 import _pytest.outcomes
 import pytest
@@ -132,6 +133,12 @@ def pytest_itemcollected(item):
     if m is not None:
         n_workers = 1
         item.add_marker(pytest.mark.parallel_threads(1))
+
+    if not hasattr(item, "obj"):
+        warnings.warn("Encountered PyTest item that is incompatible "
+                      "with pytest-run-parallel, skipping pytest-run-parallel "
+                      "monkeypatching")
+        return
 
     if identify_warnings_handling(item.obj):
         n_workers = 1

@@ -135,9 +135,11 @@ def pytest_itemcollected(item):
         item.add_marker(pytest.mark.parallel_threads(1))
 
     if not hasattr(item, "obj"):
-        warnings.warn("Encountered PyTest item that is incompatible "
-                      "with pytest-run-parallel, skipping pytest-run-parallel "
-                      "monkeypatching")
+        warnings.warn(
+            "Encountered PyTest item that is incompatible "
+            "with pytest-run-parallel, skipping pytest-run-parallel "
+            "monkeypatching"
+        )
         return
 
     if identify_warnings_handling(item.obj):

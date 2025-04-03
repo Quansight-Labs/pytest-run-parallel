@@ -136,7 +136,7 @@ def pytest_itemcollected(item):
 
     if not hasattr(item, "obj"):
         warnings.warn(
-            f"Encountered pytest item with type '{type(item)} with no 'obj' "
+            f"Encountered pytest item with type {type(item)} with no 'obj' "
             "attribute, which is incompatible with pytest-run-parallel. "
             "Tests using this item will not run in a thread pool"
         )

@@ -876,15 +876,18 @@ def test_known_incompatible_test_item_doesnt_warn(pytester):
     assert "warnings" not in result.parseoutcomes().keys()
 
 def test_thread_unsafe_function_attr(pytester):
-    pytester.makepyfile(mod_1="""
+    pytester.makepyfile(
+        mod_1="""
         def to_skip():
             __thread_unsafe__ = True
 
         def not_to_skip():
             __thread_unsafe__ = False
-    """)
+    """
+    )
 
-    pytester.makepyfile(mod_2="""
+    pytester.makepyfile(
+        mod_2="""
         import mod_1
         from mod_1 import not_to_skip
 
@@ -896,7 +899,8 @@ def test_thread_unsafe_function_attr(pytester):
 
         def marked_for_skip():
             pass
-    """)
+    """
+    )
 
     pytester.makepyfile("""
         import mod_2

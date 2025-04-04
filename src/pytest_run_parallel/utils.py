@@ -60,7 +60,8 @@ class WarningNodeVisitor(ast.NodeVisitor):
                         child_fn = getattr(mod, node.func.attr, None)
                         if child_fn is not None:
                             self.catches_warns = identify_warnings_handling(
-                                child_fn, self.skip_set, self.level + 1)
+                                child_fn, self.skip_set, self.level + 1
+                            )
         elif isinstance(node.func, ast.Name):
             if node.func.id in self.func_aliases:
                 if self.func_aliases[node.func.id] in self.blacklist:
@@ -69,7 +70,8 @@ class WarningNodeVisitor(ast.NodeVisitor):
                     if node.func.id in self.fn.__globals__:
                         child_fn = self.fn.__globals__[node.func.id]
                         self.catches_warns = identify_warnings_handling(
-                            child_fn, self.skip_set, self.level + 1)
+                            child_fn, self.skip_set, self.level + 1
+                        )
 
     def visit_Assign(self, node):
         if self.catches_warns:
@@ -78,7 +80,7 @@ class WarningNodeVisitor(ast.NodeVisitor):
         if len(node.targets) == 1:
             name_node = node.targets[0]
             value_node = node.value
-            if name_node.id == '__thread_unsafe__':
+            if name_node.id == "__thread_unsafe__":
                 self.catches_warns = value_node.value
 
 

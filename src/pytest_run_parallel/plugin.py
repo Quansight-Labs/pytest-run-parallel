@@ -37,6 +37,13 @@ def pytest_addoption(parser):
         type="linelist",
         default=[],
     )
+    parser.addini(
+        "thread_unsafe_functions",
+        "list of thread-unsafe fully-qualified named functions that cause "
+        "a test to be run sequentially",
+        type="linelist",
+        default=[],
+    )
 
 
 def pytest_configure(config):
@@ -151,7 +158,11 @@ def pytest_itemcollected(item):
         )
         return
 
-    if identify_warnings_handling(item.obj):
+    skipped_functions = [
+        x.split('.') for x in item.config.getini("thread_unsafe_functions")]
+    skipped_functions = {('.'.join(x[:-1]), x[-1]) for x in skipped_functions}
+
+    if identify_warnings_handling(item.obj, skipped_functions):
         n_workers = 1
         item.add_marker(pytest.mark.parallel_threads(1))
 

@@ -13,7 +13,7 @@ except ImportError:
 
 
 class WarningNodeVisitor(ast.NodeVisitor):
-    def __init__(self, fn):
+    def __init__(self, fn, skip_set, level=0):
         self.catches_warns = False
         self.blacklist = {
             ("pytest", "warns"),
@@ -21,10 +21,13 @@ class WarningNodeVisitor(ast.NodeVisitor):
             ("_pytest.recwarn", "warns"),
             ("_pytest.recwarn", "deprecated_call"),
             ("warnings", "catch_warnings"),
-        }
+        } | set(skip_set)
         modules = {mod.split(".")[0] for mod, _ in self.blacklist}
         modules |= {mod for mod, _ in self.blacklist}
 
+        self.fn = fn
+        self.skip_set = skip_set
+        self.level = level
         self.modules_aliases = {}
         self.func_aliases = {}
         for var_name in fn.__globals__:
@@ -41,6 +44,9 @@ class WarningNodeVisitor(ast.NodeVisitor):
         super().__init__()
 
     def visit_Call(self, node):
+        if self.catches_warns:
+            return
+
         if isinstance(node.func, ast.Attribute):
             if isinstance(node.func.value, ast.Name):
                 real_mod = node.func.value.id
@@ -48,19 +54,41 @@ class WarningNodeVisitor(ast.NodeVisitor):
                     real_mod = self.modules_aliases[real_mod]
                 if (real_mod, node.func.attr) in self.blacklist:
                     self.catches_warns = True
+                elif self.level < 2:
+                    if node.func.value.id in self.fn.__globals__:
+                        mod = self.fn.__globals__[node.func.value.id]
+                        child_fn = getattr(mod, node.func.attr, None)
+                        if child_fn is not None:
+                            self.catches_warns = identify_warnings_handling(
+                                child_fn, self.skip_set, self.level + 1)
         elif isinstance(node.func, ast.Name):
             if node.func.id in self.func_aliases:
                 if self.func_aliases[node.func.id] in self.blacklist:
                     self.catches_warns = True
+                elif self.level < 2:
+                    if node.func.id in self.fn.__globals__:
+                        child_fn = self.fn.__globals__[node.func.id]
+                        self.catches_warns = identify_warnings_handling(
+                            child_fn, self.skip_set, self.level + 1)
+
+    def visit_Assign(self, node):
+        if self.catches_warns:
+            return
+
+        if len(node.targets) == 1:
+            name_node = node.targets[0]
+            value_node = node.value
+            if name_node.id == '__thread_unsafe__':
+                self.catches_warns = value_node.value
 
 
-def identify_warnings_handling(fn):
+def identify_warnings_handling(fn, skip_set, level=0):
     try:
         src = inspect.getsource(fn)
         tree = ast.parse(dedent(src))
     except Exception:
         return False
-    visitor = WarningNodeVisitor(fn)
+    visitor = WarningNodeVisitor(fn, skip_set, level=level)
     visitor.visit(tree)
     return visitor.catches_warns
 

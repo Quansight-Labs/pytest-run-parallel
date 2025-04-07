@@ -55,7 +55,7 @@ class WarningNodeVisitor(ast.NodeVisitor):
                 if (real_mod, node.func.attr) in self.blacklist:
                     self.catches_warns = True
                 elif self.level < 2:
-                    if node.func.value.id in self.fn.__globals__:
+                    if node.func.value.id in getattr(self.fn, '__globals__', {}):
                         mod = self.fn.__globals__[node.func.value.id]
                         child_fn = getattr(mod, node.func.attr, None)
                         if child_fn is not None:

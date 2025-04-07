@@ -938,6 +938,6 @@ def test_thread_unsafe_function_attr(pytester):
             "*::test_should_be_marked_1 PASSED*",
             "*::test_should_not_be_marked PASSED*",
             "*::test_should_be_marked_2 PASSED*",
-            "*::test_should_be_marked_3 PASSED*"
+            "*::test_should_be_marked_3 PASSED*",
         ]
     )

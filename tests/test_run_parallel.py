@@ -879,10 +879,10 @@ def test_thread_unsafe_function_attr(pytester):
     pytester.makepyfile(
         mod_1="""
         def to_skip():
-            __thread_unsafe__ = True
+            __thread_safe__ = False
 
         def not_to_skip():
-            __thread_unsafe__ = False
+            __thread_safe__ = True
     """
     )
 
@@ -904,6 +904,7 @@ def test_thread_unsafe_function_attr(pytester):
 
     pytester.makepyfile("""
         import mod_2
+        from mod_2 import some_fn_calls_skip
 
         def test_should_be_marked_1(num_parallel_threads):
             mod_2.some_fn_calls_skip()
@@ -915,6 +916,10 @@ def test_thread_unsafe_function_attr(pytester):
 
         def test_should_be_marked_2(num_parallel_threads):
             mod_2.marked_for_skip()
+            assert num_parallel_threads == 1
+
+        def test_should_be_marked_3(num_parallel_threads):
+            some_fn_calls_skip()
             assert num_parallel_threads == 1
     """)
 
@@ -933,5 +938,6 @@ def test_thread_unsafe_function_attr(pytester):
             "*::test_should_be_marked_1 PASSED*",
             "*::test_should_not_be_marked PASSED*",
             "*::test_should_be_marked_2 PASSED*",
+            "*::test_should_be_marked_3 PASSED*"
         ]
     )

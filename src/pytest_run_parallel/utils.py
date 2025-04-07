@@ -82,8 +82,8 @@ class WarningNodeVisitor(ast.NodeVisitor):
         if len(node.targets) == 1:
             name_node = node.targets[0]
             value_node = node.value
-            if getattr(name_node, "id", None) == "__thread_unsafe__":
-                self.catches_warns = value_node.value
+            if getattr(name_node, "id", None) == "__thread_safe__":
+                self.catches_warns = not bool(value_node.value)
 
 
 def identify_warnings_handling(fn, skip_set, level=0):

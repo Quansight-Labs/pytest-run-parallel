@@ -140,9 +140,10 @@ def pytest_itemcollected(item):
         warnings.warn(
             f"Encountered pytest item with type {type(item)} with no 'obj' "
             "attribute, which is incompatible with pytest-run-parallel. "
-            "The pytest-run-parallel plugin does not support custom item "
-            "collection. Tests using custom collection will not run in a "
-            "thread pool.\n"
+            f"Tests using {type(item)} will not run in a thread pool.\n"
+            "The pytest-run-parallel plugin only supports custom collection"
+            "tree objects that wrap Python functions stored in an attribute "
+            "named 'obj'.\n"
             "Define a '_parallel_custom_item' attribute on the pytest item"
             "instance or class to silence this warning.\n"
             "If you do not want to use pytest-run-parallel, uninstall it from "

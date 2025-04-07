@@ -823,10 +823,6 @@ def test_incompatible_test_item(pytester):
     pytester.makepyfile("""
     import pytest
 
-    msg = ("*Encountered pytest item with type <class 'conftest.CustomItem'> "
-           "with no 'obj'*:UserWarning")
-
-    @pytest.mark.filterwarnings(msg)
     def test_incompatible_item():
         assert True
     """)
@@ -835,6 +831,10 @@ def test_incompatible_test_item(pytester):
         [
             "*::test_incompatible_item PASSED*",
         ]
+    )
+    result.stdout.no_fnmatch_line(
+        "*Encountered pytest item with type <class 'conftest.CustomItem'> "
+        "with no 'obj'*"
     )
 
 

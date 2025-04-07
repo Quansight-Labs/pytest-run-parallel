@@ -1,0 +1,11 @@
+include tests/conftest.py
+exclude pytest_run_parallel.egg-info
+recursive-exclude * *.egg-info
+recursive-include docs *.bat
+recursive-include docs *.rst
+recursive-include docs Makefile
+include *.lock
+include *.md
+include *.toml
+include *.yaml
+recursive-include docs *.py

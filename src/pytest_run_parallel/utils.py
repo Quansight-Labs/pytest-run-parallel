@@ -69,7 +69,7 @@ class WarningNodeVisitor(ast.NodeVisitor):
                     self.catches_warns = True
                     recurse = False
             if recurse and self.level < 2:
-                if node.func.id in getattr(self.fn, '__globals__', {}):
+                if node.func.id in getattr(self.fn, "__globals__", {}):
                     child_fn = self.fn.__globals__[node.func.id]
                     self.catches_warns = identify_warnings_handling(
                         child_fn, self.skip_set, self.level + 1

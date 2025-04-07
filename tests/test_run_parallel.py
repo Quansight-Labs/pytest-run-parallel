@@ -832,7 +832,7 @@ def test_incompatible_test_item(pytester):
             "*::test_incompatible_item PASSED*",
         ]
     )
-    assert result.parseoutcomes()['warnings'] == 1
+    assert result.parseoutcomes()["warnings"] == 1
 
 
 def test_known_incompatible_test_item_doesnt_warn(pytester):
@@ -873,4 +873,4 @@ def test_known_incompatible_test_item_doesnt_warn(pytester):
         "*Encountered pytest item with type <class 'conftest.CustomItem'> "
         "with no 'obj'*"
     )
-    assert 'warnings' not in result.parseoutcomes().keys()
+    assert "warnings" not in result.parseoutcomes().keys()

@@ -30,7 +30,7 @@ class WarningNodeVisitor(ast.NodeVisitor):
         self.level = level
         self.modules_aliases = {}
         self.func_aliases = {}
-        for var_name in getattr(fn, '__globals__', {}):
+        for var_name in getattr(fn, "__globals__", {}):
             value = fn.__globals__[var_name]
             if inspect.ismodule(value) and value.__name__ in modules:
                 self.modules_aliases[var_name] = value.__name__
@@ -72,7 +72,8 @@ class WarningNodeVisitor(ast.NodeVisitor):
                 if node.func.id in self.fn.__globals__:
                     child_fn = self.fn.__globals__[node.func.id]
                     self.catches_warns = identify_warnings_handling(
-                        child_fn, self.skip_set, self.level + 1)
+                        child_fn, self.skip_set, self.level + 1
+                    )
 
     def visit_Assign(self, node):
         if self.catches_warns:
@@ -81,7 +82,7 @@ class WarningNodeVisitor(ast.NodeVisitor):
         if len(node.targets) == 1:
             name_node = node.targets[0]
             value_node = node.value
-            if getattr(name_node, 'id', None) == '__thread_unsafe__':
+            if getattr(name_node, "id", None) == "__thread_unsafe__":
                 self.catches_warns = value_node.value
 
 

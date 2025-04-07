@@ -40,7 +40,7 @@ def pytest_addoption(parser):
     parser.addini(
         "thread_unsafe_functions",
         "list of thread-unsafe fully-qualified named functions that cause "
-        "a test to be run sequentially",
+        "a test to run on one thread",
         type="linelist",
         default=[],
     )

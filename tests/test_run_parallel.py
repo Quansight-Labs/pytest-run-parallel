@@ -875,6 +875,7 @@ def test_known_incompatible_test_item_doesnt_warn(pytester):
     )
     assert "warnings" not in result.parseoutcomes().keys()
 
+
 def test_thread_unsafe_function_attr(pytester):
     pytester.makepyfile(
         mod_1="""

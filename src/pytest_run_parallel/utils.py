@@ -11,6 +11,12 @@ try:
 except ImportError:
     numpy_available = False
 
+try:
+    from hypothesis.internal.detection import is_hypothesis_test
+except ImportError:
+    def is_hypothesis_test(fn):
+        return False
+
 
 class WarningNodeVisitor(ast.NodeVisitor):
     def __init__(self, fn, skip_set, level=0):
@@ -87,6 +93,8 @@ class WarningNodeVisitor(ast.NodeVisitor):
 
 
 def identify_warnings_handling(fn, skip_set, level=0):
+    if is_hypothesis_test(fn):
+        return True
     try:
         src = inspect.getsource(fn)
         tree = ast.parse(dedent(src))

@@ -151,6 +151,24 @@ Or under the section `tool.pytest.ini_options` if using `pyproject.toml`:
         ...
     ]
 
+Similarly, if a function is known to be thread unsafe and should
+cause a test to be marked as thread-unsafe as well, its fully-qualified name
+can be registered through the `thread_unsafe_functions` option in the
+INI file (or under `tool.pytest.ini_options` when using `pyproject.toml`):
+
+.. code-block:: ini
+
+    [pytest]
+    thread_unsafe_functions =
+        module.submodule.func1
+        module.submodule2.func2
+        ...
+
+Also, if you define a `__thread_safe__ = False` attribute on a function that is
+called by a test and is up to two levels below in the call stack, then
+pytest-run-parallel will automatically detect that a thread-unsafe function
+is being used and will mark the test as thread-unsafe.
+
 Usage
 -----
 

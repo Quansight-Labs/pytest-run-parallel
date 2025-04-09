@@ -874,3 +874,71 @@ def test_known_incompatible_test_item_doesnt_warn(pytester):
         "with no 'obj'*"
     )
     assert "warnings" not in result.parseoutcomes().keys()
+
+
+def test_thread_unsafe_function_attr(pytester):
+    pytester.makepyfile(
+        mod_1="""
+        def to_skip():
+            __thread_safe__ = False
+
+        def not_to_skip():
+            __thread_safe__ = True
+    """
+    )
+
+    pytester.makepyfile(
+        mod_2="""
+        import mod_1
+        from mod_1 import not_to_skip
+
+        def some_fn_calls_skip():
+            mod_1.to_skip()
+
+        def some_fn_should_not_skip():
+            not_to_skip()
+
+        def marked_for_skip():
+            pass
+    """
+    )
+
+    pytester.makepyfile("""
+        import mod_2
+        from mod_2 import some_fn_calls_skip
+
+        def test_should_be_marked_1(num_parallel_threads):
+            mod_2.some_fn_calls_skip()
+            assert num_parallel_threads == 1
+
+        def test_should_not_be_marked(num_parallel_threads):
+            mod_2.some_fn_should_not_skip()
+            assert num_parallel_threads == 10
+
+        def test_should_be_marked_2(num_parallel_threads):
+            mod_2.marked_for_skip()
+            assert num_parallel_threads == 1
+
+        def test_should_be_marked_3(num_parallel_threads):
+            some_fn_calls_skip()
+            assert num_parallel_threads == 1
+    """)
+
+    pytester.makeini("""
+    [pytest]
+    thread_unsafe_functions =
+        mod_2.marked_for_skip
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_should_be_marked_1 PASSED*",
+            "*::test_should_not_be_marked PASSED*",
+            "*::test_should_be_marked_2 PASSED*",
+            "*::test_should_be_marked_3 PASSED*",
+        ]
+    )

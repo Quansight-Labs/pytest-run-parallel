@@ -69,7 +69,13 @@ select = ["E4", "E7", "E9", "F", "I"]
 env_list = ["py38", "py39", "py310", "py311", "py312", "py313", "py313t", "pypy3", "ruff"]
 
 [tool.tox.env_run_base]
-deps = ["pytest>=6.2.0", "pytest-cov", "pytest-order", "check-manifest"]
+deps = [
+    "pytest>=6.2.0",
+    "pytest-cov",
+    "pytest-order",
+    "check-manifest",
+    "hypothesis>=6.130.0",
+]
 commands = [
     [
     "pytest",

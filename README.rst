@@ -128,7 +128,16 @@ build of Python.
 We suggest marking tests that are incompatible with this plugin's current design
 with ``@pytest.mark.thread_unsafe``.
 
-Additionally, if a set of fixtures is known to be thread safe, tests can use
+The following functions and modules are known to be thread-unsafe and
+pytest-run-parallel will automatically not run tests using them in parallel:
+
+* ``pytest.warns``
+* ``pytest.deprecated_call``
+* The pytest ``recwarn`` fixture
+* ``warnings.catch_warnings``
+* Any test using `hypothesis <https://hypothesis.readthedocs.io/en/latest/>`_.
+
+Additionally, if a set of fixtures is known to be thread safe, tests that use
 them can be automatically marked as thread unsafe by declaring them under
 the `thread_unsafe_fixtures` option under pytest INI configuration file:
 

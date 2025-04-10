@@ -12,9 +12,10 @@ except ImportError:
     numpy_available = False
 
 try:
+    # TODO: replace with hypothesis.is_hypothesis_test when that is made public
+    # see https://github.com/HypothesisWorks/hypothesis/issues/4357
     from hypothesis.internal.detection import is_hypothesis_test
 except ImportError:
-
     def is_hypothesis_test(fn):
         return False
 

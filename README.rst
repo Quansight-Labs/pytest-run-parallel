@@ -137,7 +137,7 @@ pytest-run-parallel will automatically not run tests using them in parallel:
 * ``warnings.catch_warnings``
 * Any test using `hypothesis <https://hypothesis.readthedocs.io/en/latest/>`_.
 
-Additionally, if a set of fixtures is known to be thread safe, tests that use
+Additionally, if a set of fixtures is known to be thread unsafe, tests that use
 them can be automatically marked as thread unsafe by declaring them under
 the `thread_unsafe_fixtures` option under pytest INI configuration file:
 

@@ -16,6 +16,7 @@ try:
     # see https://github.com/HypothesisWorks/hypothesis/issues/4357
     from hypothesis.internal.detection import is_hypothesis_test
 except ImportError:
+
     def is_hypothesis_test(fn):
         return False
 

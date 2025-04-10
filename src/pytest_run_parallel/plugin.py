@@ -9,7 +9,7 @@ import pytest
 from pytest_run_parallel.utils import (
     ThreadComparator,
     get_num_workers,
-    identify_warnings_handling,
+    identify_thread_unsafe_nodes,
 )
 
 
@@ -163,7 +163,7 @@ def pytest_itemcollected(item):
     ]
     skipped_functions = {(".".join(x[:-1]), x[-1]) for x in skipped_functions}
 
-    if identify_warnings_handling(item.obj, skipped_functions):
+    if identify_thread_unsafe_nodes(item.obj, skipped_functions):
         n_workers = 1
         item.add_marker(pytest.mark.parallel_threads(1))
 

@@ -11,10 +11,19 @@ try:
 except ImportError:
     numpy_available = False
 
+try:
+    # TODO: replace with hypothesis.is_hypothesis_test when that is made public
+    # see https://github.com/HypothesisWorks/hypothesis/issues/4357
+    from hypothesis.internal.detection import is_hypothesis_test
+except ImportError:
 
-class WarningNodeVisitor(ast.NodeVisitor):
+    def is_hypothesis_test(fn):
+        return False
+
+
+class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
     def __init__(self, fn, skip_set, level=0):
-        self.catches_warns = False
+        self.thread_unsafe = False
         self.blacklist = {
             ("pytest", "warns"),
             ("pytest", "deprecated_call"),
@@ -44,7 +53,7 @@ class WarningNodeVisitor(ast.NodeVisitor):
         super().__init__()
 
     def visit_Call(self, node):
-        if self.catches_warns:
+        if self.thread_unsafe:
             return
 
         if isinstance(node.func, ast.Attribute):
@@ -53,48 +62,50 @@ class WarningNodeVisitor(ast.NodeVisitor):
                 if real_mod in self.modules_aliases:
                     real_mod = self.modules_aliases[real_mod]
                 if (real_mod, node.func.attr) in self.blacklist:
-                    self.catches_warns = True
+                    self.thread_unsafe = True
                 elif self.level < 2:
                     if node.func.value.id in getattr(self.fn, "__globals__", {}):
                         mod = self.fn.__globals__[node.func.value.id]
                         child_fn = getattr(mod, node.func.attr, None)
                         if child_fn is not None:
-                            self.catches_warns = identify_warnings_handling(
+                            self.thread_unsafe = identify_thread_unsafe_nodes(
                                 child_fn, self.skip_set, self.level + 1
                             )
         elif isinstance(node.func, ast.Name):
             recurse = True
             if node.func.id in self.func_aliases:
                 if self.func_aliases[node.func.id] in self.blacklist:
-                    self.catches_warns = True
+                    self.thread_unsafe = True
                     recurse = False
             if recurse and self.level < 2:
                 if node.func.id in getattr(self.fn, "__globals__", {}):
                     child_fn = self.fn.__globals__[node.func.id]
-                    self.catches_warns = identify_warnings_handling(
+                    self.thread_unsafe = identify_thread_unsafe_nodes(
                         child_fn, self.skip_set, self.level + 1
                     )
 
     def visit_Assign(self, node):
-        if self.catches_warns:
+        if self.thread_unsafe:
             return
 
         if len(node.targets) == 1:
             name_node = node.targets[0]
             value_node = node.value
             if getattr(name_node, "id", None) == "__thread_safe__":
-                self.catches_warns = not bool(value_node.value)
+                self.thread_unsafe = not bool(value_node.value)
 
 
-def identify_warnings_handling(fn, skip_set, level=0):
+def identify_thread_unsafe_nodes(fn, skip_set, level=0):
+    if is_hypothesis_test(fn):
+        return True
     try:
         src = inspect.getsource(fn)
         tree = ast.parse(dedent(src))
     except Exception:
         return False
-    visitor = WarningNodeVisitor(fn, skip_set, level=level)
+    visitor = ThreadUnsafeNodeVisitor(fn, skip_set, level=level)
     visitor.visit(tree)
-    return visitor.catches_warns
+    return visitor.thread_unsafe
 
 
 class ThreadComparator:

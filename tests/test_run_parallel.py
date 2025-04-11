@@ -209,7 +209,7 @@ def test_skip(pytester):
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_skipped SKIPPED*",
+            "*::test_skipped PARALLEL SKIPPED*",
         ]
     )
 
@@ -234,7 +234,7 @@ def test_fail(pytester):
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_should_fail FAILED*",
+            "*::test_should_fail PARALLEL FAILED*",
         ]
     )
 

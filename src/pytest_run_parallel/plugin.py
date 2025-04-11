@@ -176,11 +176,36 @@ def pytest_itemcollected(item):
         item.add_marker(pytest.mark.parallel_threads(1))
 
     if n_workers > 1 or n_iterations > 1:
+        item.add_marker(pytest.mark.parallel_threads(n_workers))
+        item.user_properties.append(('n_threads', n_workers))
         original_globals = item.obj.__globals__
         item.obj = wrap_function_parallel(item.obj, n_workers, n_iterations)
         for name in original_globals:
             if name not in item.obj.__globals__:
                 item.obj.__globals__[name] = original_globals[name]
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_report_collectionfinish(config, start_path, startdir, items):
+    parallel_count = 0
+    for item in items:
+        marker = item.get_closest_marker("parallel_threads")
+        if marker is not None:
+            val = marker.args[0]
+            parallel_count += int(val > 1)
+    return f"Collected {parallel_count} items to run in parallel"
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_report_teststatus(report, config):
+    props = dict(report.user_properties)
+    if 'n_threads' in props and props['n_threads'] > 1:
+        if report.outcome == 'passed':
+            return "passed", "·", "PARALLEL PASSED"
+        if report.outcome == 'skipped':
+            return "skipped", "S", "PARALLEL SKIPPED"
+        if report.outcome == 'failed':
+            return "error", "e", "PARALLEL FAILED"
 
 
 @pytest.fixture

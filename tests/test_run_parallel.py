@@ -1,6 +1,6 @@
+import os
 from contextlib import suppress
 
-import os
 import pytest
 
 try:
@@ -346,7 +346,7 @@ def test_thread_comp_fixture(pytester):
     result.stdout.fnmatch_lines(
         [
             "*::test_value_comparison PARALLEL PASSED*",
-            "*::test_comparison_fail PARALLEL FAILED*"
+            "*::test_comparison_fail PARALLEL FAILED*",
         ]
     )
 
@@ -953,14 +953,14 @@ def test_thread_unsafe_function_attr(pytester):
             "*3 tests were not run in parallel because of use of thread-unsafe "
             "functionality, to list the tests that were skipped, "
             "re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1 in your "
-            "shell environment*"
+            "shell environment*",
         ]
     )
 
     # re-run with PYTEST_RUN_PARALLEL_VERBOSE=1
-    os.environ['PYTEST_RUN_PARALLEL_VERBOSE'] = '1'
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "1"
     result = pytester.runpytest("--parallel-threads=10", "-v")
-    os.environ['PYTEST_RUN_PARALLEL_VERBOSE'] = '0'
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "0"
 
     result.stdout.fnmatch_lines(
         [
@@ -971,7 +971,7 @@ def test_thread_unsafe_function_attr(pytester):
             "*::test_should_be_marked_3 PASSED*",
             "*::test_should_be_marked_1*",
             "*::test_should_be_marked_2*",
-            "*::test_should_be_marked_3*"
+            "*::test_should_be_marked_3*",
         ]
     )
 

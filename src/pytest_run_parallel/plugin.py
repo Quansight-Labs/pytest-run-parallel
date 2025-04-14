@@ -1,6 +1,6 @@
 import functools
-import sys
 import os
+import sys
 import threading
 import warnings
 
@@ -140,9 +140,9 @@ def pytest_itemcollected(item):
     m = item.get_closest_marker("thread_unsafe")
     if m is not None:
         n_workers = 1
-        reason = m.kwargs.get('reason', None)
+        reason = m.kwargs.get("reason", None)
         if reason is not None:
-            item.user_properties.append(('thread_unsafe_reason', reason))
+            item.user_properties.append(("thread_unsafe_reason", reason))
         item.add_marker(pytest.mark.parallel_threads(1))
 
     if not hasattr(item, "obj"):
@@ -203,7 +203,7 @@ def pytest_report_collectionfinish(config, start_path, startdir, items):
 @pytest.hookimpl(tryfirst=True, wrapper=True)
 def pytest_report_teststatus(report, config):
     outcome = yield
-    if getattr(report, 'when', None) != 'call':
+    if getattr(report, "when", None) != "call":
         return outcome
 
     props = dict(report.user_properties)
@@ -212,39 +212,48 @@ def pytest_report_teststatus(report, config):
             return "passed", "·", "PARALLEL PASSED"
         if report.outcome == "failed":
             return "error", "e", "PARALLEL FAILED"
-    elif 'thread_unsafe_reason' in props:
-        if report.outcome == 'passed':
-            return "passed", ".", f"PASSED ([thread-unsafe]: {props['thread_unsafe_reason']})"
-        if report.outcome == 'failed':
-            return "passed", "x", f"FAILED ([thread-unsafe]: {props['thread_unsafe_reason']})"
+    elif "thread_unsafe_reason" in props:
+        if report.outcome == "passed":
+            return (
+                "passed",
+                ".",
+                f"PASSED ([thread-unsafe]: {props['thread_unsafe_reason']})",
+            )
+        if report.outcome == "failed":
+            return (
+                "passed",
+                "x",
+                f"FAILED ([thread-unsafe]: {props['thread_unsafe_reason']})",
+            )
     return outcome
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
-    verbose_tests = bool(int(os.environ.get(
-        'PYTEST_RUN_PARALLEL_VERBOSE', '0')))
+    verbose_tests = bool(int(os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")))
 
-    terminalreporter.write_sep("*", 'List of tests *not* run in parallel')
+    terminalreporter.write_sep("*", "List of tests *not* run in parallel")
 
     num_serial = 0
     stats = terminalreporter.stats
     for stat_category in stats:
         reports = stats[stat_category]
         for report in reports:
-            if getattr(report, 'when', None) == 'call':
+            if getattr(report, "when", None) == "call":
                 report_props = dict(report.user_properties)
-                if 'n_threads' not in report_props:
+                if "n_threads" not in report_props:
                     if verbose_tests:
                         terminalreporter.line(report.nodeid)
                     num_serial += 1
 
     if not verbose_tests:
-        terminalreporter.line(f"{num_serial} tests were not run in parallel "
-                              "because of use of thread-unsafe functionality, "
-                              "to list the tests that were skipped, re-run "
-                              "while setting PYTEST_RUN_PARALLEL_VERBOSE=1 "
-                              "in your shell environment")
+        terminalreporter.line(
+            f"{num_serial} tests were not run in parallel "
+            "because of use of thread-unsafe functionality, "
+            "to list the tests that were skipped, re-run "
+            "while setting PYTEST_RUN_PARALLEL_VERBOSE=1 "
+            "in your shell environment"
+        )
 
 
 @pytest.fixture

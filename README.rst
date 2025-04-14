@@ -126,7 +126,7 @@ more detail about using pytest in a multithreaded context on the free-threaded
 build of Python.
 
 We suggest marking tests that are incompatible with this plugin's current design
-with ``@pytest.mark.thread_unsafe``.
+with ``@pytest.mark.thread_unsafe`` or ``@pytest.mark.thread_unsafe(reason="...")``.
 
 The following functions and modules are known to be thread-unsafe and
 pytest-run-parallel will automatically not run tests using them in parallel:
@@ -255,6 +255,12 @@ produced by all threads during an specific execution step are the same:
         c = None
         # Check that the values for a, b, c are the same across tests
         thread_comp(a=a, b=b, c=c)
+
+Tracing
+---------
+In order to list the tests that were listed as thread-unsafe and were not executed
+in parallel, you can set the ``PYTEST_RUN_PARALLEL_VERBOSE`` environment variable
+to 1.
 
 Contributing
 ------------

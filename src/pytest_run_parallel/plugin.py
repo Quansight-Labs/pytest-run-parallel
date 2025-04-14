@@ -169,6 +169,8 @@ def pytest_itemcollected(item):
 
     if identify_thread_unsafe_nodes(item.obj, skipped_functions):
         n_workers = 1
+        item.user_properties.append(
+            ('thread_unsafe_reason', 'calls thread-unsafe function'))
         item.add_marker(pytest.mark.parallel_threads(1))
 
     unsafe_fixtures = _thread_unsafe_fixtures | set(
@@ -177,6 +179,8 @@ def pytest_itemcollected(item):
 
     if any(fixture in fixtures for fixture in unsafe_fixtures):
         n_workers = 1
+        item.user_properties.append(
+            ('thread_unsafe_reason', 'uses thread-unsafe fixture'))
         item.add_marker(pytest.mark.parallel_threads(1))
 
     if n_workers > 1 or n_iterations > 1:

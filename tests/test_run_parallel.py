@@ -940,6 +940,8 @@ def test_thread_unsafe_function_attr(pytester):
     """)
 
     # run pytest with the following cmd args
+    orig = os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "0"
     result = pytester.runpytest("--parallel-threads=10", "-v")
 
     # fnmatch_lines does an assertion internally
@@ -950,6 +952,12 @@ def test_thread_unsafe_function_attr(pytester):
             "*::test_should_not_be_marked PARALLEL PASSED*",
             "*::test_should_be_marked_2 PASSED*",
             "*::test_should_be_marked_3 PASSED*",
+        ]
+    )
+
+
+    result.stdout.fnmatch_lines(
+        [
             "*3 tests were not run in parallel because of use of thread-unsafe "
             "functionality, to list the tests that were skipped, "
             "re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1 in your "
@@ -960,7 +968,7 @@ def test_thread_unsafe_function_attr(pytester):
     # re-run with PYTEST_RUN_PARALLEL_VERBOSE=1
     os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "1"
     result = pytester.runpytest("--parallel-threads=10", "-v")
-    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "0"
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
 
     result.stdout.fnmatch_lines(
         [

@@ -187,11 +187,11 @@ def pytest_itemcollected(item):
 
     if n_workers > 1 and any(fixture in fixtures for fixture in unsafe_fixtures):
         n_workers = 1
-        used_unsafe_fixtures = unsafe_fixtures | set(fixtures)
+        used_unsafe_fixtures = unsafe_fixtures & set(fixtures)
         item.user_properties.append(
             (
                 "thread_unsafe_reason",
-                f"uses thread-unsafe fixture(s) {used_unsafe_fixtures}",
+                f"uses thread-unsafe fixture(s): {used_unsafe_fixtures}",
             )
         )
         item.add_marker(pytest.mark.parallel_threads(1))

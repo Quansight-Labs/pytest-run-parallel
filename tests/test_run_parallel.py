@@ -955,7 +955,6 @@ def test_thread_unsafe_function_attr(pytester):
         ]
     )
 
-
     result.stdout.fnmatch_lines(
         [
             "*3 tests were not run in parallel because of use of thread-unsafe "

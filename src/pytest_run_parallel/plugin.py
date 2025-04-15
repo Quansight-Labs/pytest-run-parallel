@@ -9,8 +9,8 @@ import pytest
 
 from pytest_run_parallel.utils import (
     ThreadComparator,
-    get_num_workers,
     get_configured_num_workers,
+    get_num_workers,
     identify_thread_unsafe_nodes,
 )
 
@@ -145,8 +145,9 @@ def pytest_itemcollected(item):
         if reason is not None:
             item.user_properties.append(("thread_unsafe_reason", reason))
         else:
-            item.user_properties.append(("thread_unsafe_reason",
-                                         "uses thread_unsafe marker"))
+            item.user_properties.append(
+                ("thread_unsafe_reason", "uses thread_unsafe marker")
+            )
         item.add_marker(pytest.mark.parallel_threads(1))
 
     if not hasattr(item, "obj"):
@@ -173,12 +174,11 @@ def pytest_itemcollected(item):
 
     if n_workers > 1:
         thread_unsafe, thread_unsafe_reason = identify_thread_unsafe_nodes(
-            item.obj, skipped_functions)
+            item.obj, skipped_functions
+        )
         if thread_unsafe:
             n_workers = 1
-            item.user_properties.append(
-                ("thread_unsafe_reason", thread_unsafe_reason)
-            )
+            item.user_properties.append(("thread_unsafe_reason", thread_unsafe_reason))
             item.add_marker(pytest.mark.parallel_threads(1))
 
     unsafe_fixtures = _thread_unsafe_fixtures | set(
@@ -189,8 +189,10 @@ def pytest_itemcollected(item):
         n_workers = 1
         used_unsafe_fixtures = unsafe_fixtures | set(fixtures)
         item.user_properties.append(
-            ("thread_unsafe_reason",
-             f"uses thread-unsafe fixture(s) {used_unsafe_fixtures}")
+            (
+                "thread_unsafe_reason",
+                f"uses thread-unsafe fixture(s) {used_unsafe_fixtures}",
+            )
         )
         item.add_marker(pytest.mark.parallel_threads(1))
 
@@ -262,10 +264,11 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                 report_props = dict(report.user_properties)
                 if "n_threads" not in report_props:
                     if verbose_tests:
-                        reason = report_props.get('thread_unsafe_reason', None)
+                        reason = report_props.get("thread_unsafe_reason", None)
                         if reason:
                             terminalreporter.line(
-                                f"{report.nodeid} skipped with reason: \"{reason}\"")
+                                f'{report.nodeid} skipped with reason: "{reason}"'
+                            )
                         else:
                             terminalreporter.line(report.nodeid)
                     num_serial += 1

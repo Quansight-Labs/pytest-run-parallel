@@ -64,7 +64,9 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                     real_mod = self.modules_aliases[real_mod]
                 if (real_mod, node.func.attr) in self.blacklist:
                     self.thread_unsafe = True
-                    self.thread_unsafe_reason = f"calls thread-unsafe function: {node.func.attr}"
+                    self.thread_unsafe_reason = (
+                        f"calls thread-unsafe function: {node.func.attr}"
+                    )
                 elif self.level < 2:
                     if node.func.value.id in getattr(self.fn, "__globals__", {}):
                         mod = self.fn.__globals__[node.func.value.id]
@@ -80,7 +82,9 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             if node.func.id in self.func_aliases:
                 if self.func_aliases[node.func.id] in self.blacklist:
                     self.thread_unsafe = True
-                    self.thread_unsafe_reason = f"calls thread-unsafe function: {node.func.id}"
+                    self.thread_unsafe_reason = (
+                        f"calls thread-unsafe function: {node.func.id}"
+                    )
                     recurse = False
             if recurse and self.level < 2:
                 if node.func.id in getattr(self.fn, "__globals__", {}):
@@ -102,7 +106,8 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                 self.thread_unsafe = not bool(value_node.value)
                 self.thread_unsafe_reason = (
                     f"calls thread-unsafe function: f{name_node} "
-                    "(inferred via func.__thread_safe__ == False)")
+                    "(inferred via func.__thread_safe__ == False)"
+                )
 
 
 def identify_thread_unsafe_nodes(fn, skip_set, level=0):

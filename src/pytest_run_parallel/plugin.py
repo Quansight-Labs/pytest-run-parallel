@@ -10,6 +10,7 @@ import pytest
 from pytest_run_parallel.utils import (
     ThreadComparator,
     get_num_workers,
+    get_configured_num_workers,
     identify_thread_unsafe_nodes,
 )
 
@@ -237,8 +238,12 @@ def pytest_report_teststatus(report, config):
 @pytest.hookimpl(trylast=True)
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     verbose_tests = bool(int(os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")))
-
-    terminalreporter.write_sep("*", "List of tests *not* run in parallel")
+    n_workers = get_configured_num_workers(config)
+    if n_workers > 1:
+        if verbose_tests:
+            terminalreporter.write_sep("*", "List of tests *not* run in parallel")
+        else:
+            terminalreporter.write_sep("*", "Some tests *not* run in parallel")
 
     num_serial = 0
     stats = terminalreporter.stats
@@ -249,10 +254,10 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                 report_props = dict(report.user_properties)
                 if "n_threads" not in report_props:
                     if verbose_tests:
-                        terminalreporter.line(report.nodeid)
+                        terminalreporter.line(f"{report.nodeid} {report_props}")
                     num_serial += 1
 
-    if not verbose_tests:
+    if n_workers > 1 and not verbose_tests:
         terminalreporter.line(
             f"{num_serial} tests were not run in parallel "
             "because of use of thread-unsafe functionality, "

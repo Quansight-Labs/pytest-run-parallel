@@ -211,14 +211,18 @@ def get_logical_cpus():
     return cpu_count()
 
 
-def get_num_workers(config, item):
+def get_configured_num_workers(config):
     n_workers = config.option.parallel_threads
     if n_workers == "auto":
         logical_cpus = get_logical_cpus()
         n_workers = logical_cpus if logical_cpus is not None else 1
     else:
         n_workers = int(n_workers)
+    return n_workers
 
+
+def get_num_workers(config, item):
+    n_workers = get_configured_num_workers(config)
     marker = item.get_closest_marker("parallel_threads")
     if marker is not None:
         val = marker.args[0]

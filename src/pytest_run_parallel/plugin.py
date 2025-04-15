@@ -138,7 +138,7 @@ def pytest_itemcollected(item):
         n_iterations = int(m.args[0])
 
     m = item.get_closest_marker("thread_unsafe")
-    if m is not None:
+    if n_workers > 1 and m is not None:
         n_workers = 1
         reason = m.kwargs.get("reason", None)
         if reason is not None:
@@ -167,7 +167,7 @@ def pytest_itemcollected(item):
     ]
     skipped_functions = {(".".join(x[:-1]), x[-1]) for x in skipped_functions}
 
-    if identify_thread_unsafe_nodes(item.obj, skipped_functions):
+    if n_workers > 1 and identify_thread_unsafe_nodes(item.obj, skipped_functions):
         n_workers = 1
         item.user_properties.append(
             ("thread_unsafe_reason", "calls thread-unsafe function")
@@ -178,7 +178,7 @@ def pytest_itemcollected(item):
         item.config.getini("thread_unsafe_fixtures")
     )
 
-    if any(fixture in fixtures for fixture in unsafe_fixtures):
+    if n_workers > 1 and any(fixture in fixtures for fixture in unsafe_fixtures):
         n_workers = 1
         item.user_properties.append(
             ("thread_unsafe_reason", "uses thread-unsafe fixture")

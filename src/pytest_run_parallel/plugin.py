@@ -144,6 +144,9 @@ def pytest_itemcollected(item):
         reason = m.kwargs.get("reason", None)
         if reason is not None:
             item.user_properties.append(("thread_unsafe_reason", reason))
+        else:
+            item.user_properties.append(("thread_unsafe_reason",
+                                         "uses thread_unsafe marker"))
         item.add_marker(pytest.mark.parallel_threads(1))
 
     if not hasattr(item, "obj"):
@@ -168,12 +171,15 @@ def pytest_itemcollected(item):
     ]
     skipped_functions = {(".".join(x[:-1]), x[-1]) for x in skipped_functions}
 
-    if n_workers > 1 and identify_thread_unsafe_nodes(item.obj, skipped_functions):
-        n_workers = 1
-        item.user_properties.append(
-            ("thread_unsafe_reason", "calls thread-unsafe function")
-        )
-        item.add_marker(pytest.mark.parallel_threads(1))
+    if n_workers > 1:
+        thread_unsafe, thread_unsafe_reason = identify_thread_unsafe_nodes(
+            item.obj, skipped_functions)
+        if thread_unsafe:
+            n_workers = 1
+            item.user_properties.append(
+                ("thread_unsafe_reason", thread_unsafe_reason)
+            )
+            item.add_marker(pytest.mark.parallel_threads(1))
 
     unsafe_fixtures = _thread_unsafe_fixtures | set(
         item.config.getini("thread_unsafe_fixtures")
@@ -181,8 +187,10 @@ def pytest_itemcollected(item):
 
     if n_workers > 1 and any(fixture in fixtures for fixture in unsafe_fixtures):
         n_workers = 1
+        used_unsafe_fixtures = unsafe_fixtures | set(fixtures)
         item.user_properties.append(
-            ("thread_unsafe_reason", "uses thread-unsafe fixture")
+            ("thread_unsafe_reason",
+             f"uses thread-unsafe fixture(s) {used_unsafe_fixtures}")
         )
         item.add_marker(pytest.mark.parallel_threads(1))
 
@@ -224,7 +232,7 @@ def pytest_report_teststatus(report, config):
             return (
                 "passed",
                 ".",
-                f"PASSED ([thread-unsafe]: {props['thread_unsafe_reason']})",
+                f"PASSED [thread-unsafe]: {props['thread_unsafe_reason']}",
             )
         if report.outcome == "failed":
             return (
@@ -254,7 +262,12 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                 report_props = dict(report.user_properties)
                 if "n_threads" not in report_props:
                     if verbose_tests:
-                        terminalreporter.line(f"{report.nodeid} {report_props}")
+                        reason = report_props.get('thread_unsafe_reason', None)
+                        if reason:
+                            terminalreporter.line(
+                                f"{report.nodeid} skipped with reason: \"{reason}\"")
+                        else:
+                            terminalreporter.line(report.nodeid)
                     num_serial += 1
 
     if n_workers > 1 and not verbose_tests:

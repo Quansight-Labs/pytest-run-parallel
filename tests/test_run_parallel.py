@@ -948,10 +948,10 @@ def test_thread_unsafe_function_attr(pytester):
     result.stdout.fnmatch_lines(
         [
             "*Collected 1 items to run in parallel*",
-            "*::test_should_be_marked_1 PASSED *thread-unsafe*: calls thread-unsafe function*",
+            "*::test_should_be_marked_1 PASSED *thread-unsafe*inferred via func.__thread_safe__*",
             "*::test_should_not_be_marked PARALLEL PASSED*",
-            "*::test_should_be_marked_2 PASSED*",
-            "*::test_should_be_marked_3 PASSED*",
+            "*::test_should_be_marked_2 PASSED *thread-unsafe*marked_for_skip*",
+            "*::test_should_be_marked_3 PASSED *thread-unsafe*inferred via func.__thread_safe__*",
         ]
     )
 

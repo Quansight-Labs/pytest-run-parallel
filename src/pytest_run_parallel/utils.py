@@ -24,6 +24,7 @@ except ImportError:
 class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
     def __init__(self, fn, skip_set, level=0):
         self.thread_unsafe = False
+        self.thread_unsafe_reason = None
         self.blacklist = {
             ("pytest", "warns"),
             ("pytest", "deprecated_call"),
@@ -63,25 +64,31 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                     real_mod = self.modules_aliases[real_mod]
                 if (real_mod, node.func.attr) in self.blacklist:
                     self.thread_unsafe = True
+                    self.thread_unsafe_reason = f"calls thread-unsafe function: {node.func.attr}"
                 elif self.level < 2:
                     if node.func.value.id in getattr(self.fn, "__globals__", {}):
                         mod = self.fn.__globals__[node.func.value.id]
                         child_fn = getattr(mod, node.func.attr, None)
                         if child_fn is not None:
-                            self.thread_unsafe = identify_thread_unsafe_nodes(
-                                child_fn, self.skip_set, self.level + 1
+                            self.thread_unsafe, self.thread_unsafe_reason = (
+                                identify_thread_unsafe_nodes(
+                                    child_fn, self.skip_set, self.level + 1
+                                )
                             )
         elif isinstance(node.func, ast.Name):
             recurse = True
             if node.func.id in self.func_aliases:
                 if self.func_aliases[node.func.id] in self.blacklist:
                     self.thread_unsafe = True
+                    self.thread_unsafe_reason = f"calls thread-unsafe function: {node.func.id}"
                     recurse = False
             if recurse and self.level < 2:
                 if node.func.id in getattr(self.fn, "__globals__", {}):
                     child_fn = self.fn.__globals__[node.func.id]
-                    self.thread_unsafe = identify_thread_unsafe_nodes(
-                        child_fn, self.skip_set, self.level + 1
+                    self.thread_unsafe, self.thread_unsafe_reason = (
+                        identify_thread_unsafe_nodes(
+                            child_fn, self.skip_set, self.level + 1
+                        )
                     )
 
     def visit_Assign(self, node):
@@ -93,19 +100,22 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             value_node = node.value
             if getattr(name_node, "id", None) == "__thread_safe__":
                 self.thread_unsafe = not bool(value_node.value)
+                self.thread_unsafe_reason = (
+                    f"calls thread-unsafe function: f{name_node} "
+                    "(inferred via func.__thread_safe__ == False)")
 
 
 def identify_thread_unsafe_nodes(fn, skip_set, level=0):
     if is_hypothesis_test(fn):
-        return True
+        return True, "uses hypothesis"
     try:
         src = inspect.getsource(fn)
         tree = ast.parse(dedent(src))
     except Exception:
-        return False
+        return False, None
     visitor = ThreadUnsafeNodeVisitor(fn, skip_set, level=level)
     visitor.visit(tree)
-    return visitor.thread_unsafe
+    return visitor.thread_unsafe, visitor.thread_unsafe_reason
 
 
 class ThreadComparator:

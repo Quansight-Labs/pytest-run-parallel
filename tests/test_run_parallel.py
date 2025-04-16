@@ -1,3 +1,4 @@
+import os
 from contextlib import suppress
 
 import pytest
@@ -234,7 +235,7 @@ def test_fail(pytester):
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_should_fail FAILED*",
+            "*::test_should_fail PARALLEL FAILED*",
         ]
     )
 
@@ -259,7 +260,7 @@ def test_exception(pytester):
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_should_fail FAILED*",
+            "*::test_should_fail PARALLEL FAILED*",
         ]
     )
 
@@ -288,8 +289,8 @@ def test_num_parallel_threads_fixture(pytester):
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_should_yield_global_threads PASSED*",
-            "*::test_should_yield_marker_threads PASSED*",
+            "*::test_should_yield_global_threads PARALLEL PASSED*",
+            "*::test_should_yield_marker_threads PARALLEL PASSED*",
         ]
     )
 
@@ -343,7 +344,10 @@ def test_thread_comp_fixture(pytester):
 
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
-        ["*::test_value_comparison PASSED*", "*::test_comparison_fail FAILED*"]
+        [
+            "*::test_value_comparison PARALLEL PASSED*",
+            "*::test_comparison_fail PARALLEL FAILED*",
+        ]
     )
 
 
@@ -542,6 +546,10 @@ def test_thread_unsafe_marker(pytester):
         @pytest.mark.thread_unsafe
         def test_should_run_single(num_parallel_threads):
             assert num_parallel_threads == 1
+
+        @pytest.mark.thread_unsafe(reason='this is thread-unsafe')
+        def test_should_run_single_2(num_parallel_threads):
+            assert num_parallel_threads == 1
     """)
 
     # run pytest with the following cmd args
@@ -551,6 +559,7 @@ def test_thread_unsafe_marker(pytester):
     result.stdout.fnmatch_lines(
         [
             "*::test_should_run_single PASSED*",
+            "*::test_should_run_single_2 PASSED *thread-unsafe*: this is thread-unsafe*",
         ]
     )
 
@@ -623,7 +632,7 @@ def test_auto_detect_cpus_psutil_affinity(
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_auto_detect_cpus PASSED*",
+            "*::test_auto_detect_cpus PARALLEL PASSED*",
         ]
     )
 
@@ -650,7 +659,7 @@ def test_auto_detect_cpus_psutil_cpu_count(
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_auto_detect_cpus PASSED*",
+            "*::test_auto_detect_cpus PARALLEL PASSED*",
         ]
     )
 
@@ -682,7 +691,7 @@ def test_auto_detect_process_cpu_count(
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_auto_detect_cpus PASSED*",
+            "*::test_auto_detect_cpus PARALLEL PASSED*",
         ]
     )
 
@@ -716,7 +725,7 @@ def test_auto_detect_sched_getaffinity(
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_auto_detect_cpus PASSED*",
+            "*::test_auto_detect_cpus PARALLEL PASSED*",
         ]
     )
 
@@ -747,7 +756,7 @@ def test_auto_detect_cpu_count(
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_auto_detect_cpus PASSED*",
+            "*::test_auto_detect_cpus PARALLEL PASSED*",
         ]
     )
 
@@ -791,10 +800,10 @@ def test_thread_unsafe_fixtures(pytester):
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_capsys PASSED*",
-            "*::test_recwarn PASSED*",
-            "*::test_custom_fixture_skip PASSED*",
-            "*::test_custom_fixture_skip_2 PASSED*",
+            "*::test_capsys PASSED *thread-unsafe*: uses thread-unsafe fixture*",
+            "*::test_recwarn PASSED *thread-unsafe*: uses thread-unsafe fixture*",
+            "*::test_custom_fixture_skip PASSED *thread-unsafe*: uses thread-unsafe fixture*",
+            "*::test_custom_fixture_skip_2 PASSED *thread-unsafe*: uses thread-unsafe fixture*",
         ]
     )
 
@@ -931,15 +940,45 @@ def test_thread_unsafe_function_attr(pytester):
     """)
 
     # run pytest with the following cmd args
+    orig = os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "0"
     result = pytester.runpytest("--parallel-threads=10", "-v")
 
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_should_be_marked_1 PASSED*",
-            "*::test_should_not_be_marked PASSED*",
+            "*Collected 1 items to run in parallel*",
+            "*::test_should_be_marked_1 PASSED *thread-unsafe*inferred via func.__thread_safe__*",
+            "*::test_should_not_be_marked PARALLEL PASSED*",
+            "*::test_should_be_marked_2 PASSED *thread-unsafe*marked_for_skip*",
+            "*::test_should_be_marked_3 PASSED *thread-unsafe*inferred via func.__thread_safe__*",
+        ]
+    )
+
+    result.stdout.fnmatch_lines(
+        [
+            "*3 tests were not run in parallel because of use of thread-unsafe "
+            "functionality, to list the tests that were skipped, "
+            "re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1 in your "
+            "shell environment*",
+        ]
+    )
+
+    # re-run with PYTEST_RUN_PARALLEL_VERBOSE=1
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "1"
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
+
+    result.stdout.fnmatch_lines(
+        [
+            "*Collected 1 items to run in parallel*",
+            "*::test_should_be_marked_1 PASSED *thread-unsafe*: calls thread-unsafe function*",
+            "*::test_should_not_be_marked PARALLEL PASSED*",
             "*::test_should_be_marked_2 PASSED*",
             "*::test_should_be_marked_3 PASSED*",
+            "*::test_should_be_marked_1*",
+            "*::test_should_be_marked_2*",
+            "*::test_should_be_marked_3*",
         ]
     )
 

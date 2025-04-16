@@ -1,4 +1,5 @@
 import functools
+import os
 import sys
 import threading
 import warnings
@@ -8,6 +9,7 @@ import pytest
 
 from pytest_run_parallel.utils import (
     ThreadComparator,
+    get_configured_num_workers,
     get_num_workers,
     identify_thread_unsafe_nodes,
 )
@@ -137,8 +139,15 @@ def pytest_itemcollected(item):
         n_iterations = int(m.args[0])
 
     m = item.get_closest_marker("thread_unsafe")
-    if m is not None:
+    if n_workers > 1 and m is not None:
         n_workers = 1
+        reason = m.kwargs.get("reason", None)
+        if reason is not None:
+            item.user_properties.append(("thread_unsafe_reason", reason))
+        else:
+            item.user_properties.append(
+                ("thread_unsafe_reason", "uses thread_unsafe marker")
+            )
         item.add_marker(pytest.mark.parallel_threads(1))
 
     if not hasattr(item, "obj"):
@@ -163,24 +172,115 @@ def pytest_itemcollected(item):
     ]
     skipped_functions = {(".".join(x[:-1]), x[-1]) for x in skipped_functions}
 
-    if identify_thread_unsafe_nodes(item.obj, skipped_functions):
-        n_workers = 1
-        item.add_marker(pytest.mark.parallel_threads(1))
+    if n_workers > 1:
+        thread_unsafe, thread_unsafe_reason = identify_thread_unsafe_nodes(
+            item.obj, skipped_functions
+        )
+        if thread_unsafe:
+            n_workers = 1
+            item.user_properties.append(("thread_unsafe_reason", thread_unsafe_reason))
+            item.add_marker(pytest.mark.parallel_threads(1))
 
     unsafe_fixtures = _thread_unsafe_fixtures | set(
         item.config.getini("thread_unsafe_fixtures")
     )
 
-    if any(fixture in fixtures for fixture in unsafe_fixtures):
+    if n_workers > 1 and any(fixture in fixtures for fixture in unsafe_fixtures):
         n_workers = 1
+        used_unsafe_fixtures = unsafe_fixtures & set(fixtures)
+        item.user_properties.append(
+            (
+                "thread_unsafe_reason",
+                f"uses thread-unsafe fixture(s): {used_unsafe_fixtures}",
+            )
+        )
         item.add_marker(pytest.mark.parallel_threads(1))
 
     if n_workers > 1 or n_iterations > 1:
+        item.add_marker(pytest.mark.parallel_threads(n_workers))
+        item.user_properties.append(("n_threads", n_workers))
         original_globals = item.obj.__globals__
         item.obj = wrap_function_parallel(item.obj, n_workers, n_iterations)
         for name in original_globals:
             if name not in item.obj.__globals__:
                 item.obj.__globals__[name] = original_globals[name]
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_report_collectionfinish(config, start_path, startdir, items):
+    parallel_count = 0
+    for item in items:
+        marker = item.get_closest_marker("parallel_threads")
+        if marker is not None:
+            val = marker.args[0]
+            parallel_count += int(val > 1)
+    return f"Collected {parallel_count} items to run in parallel"
+
+
+@pytest.hookimpl(tryfirst=True, wrapper=True)
+def pytest_report_teststatus(report, config):
+    outcome = yield
+    if getattr(report, "when", None) != "call":
+        return outcome
+
+    props = dict(report.user_properties)
+    if "n_threads" in props and props["n_threads"] > 1:
+        if report.outcome == "passed":
+            return "passed", "·", "PARALLEL PASSED"
+        if report.outcome == "failed":
+            return "error", "e", "PARALLEL FAILED"
+    elif "thread_unsafe_reason" in props:
+        if report.outcome == "passed":
+            return (
+                "passed",
+                ".",
+                f"PASSED [thread-unsafe]: {props['thread_unsafe_reason']}",
+            )
+        if report.outcome == "failed":
+            return (
+                "passed",
+                "x",
+                f"FAILED ([thread-unsafe]: {props['thread_unsafe_reason']})",
+            )
+    return outcome
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    verbose_tests = bool(int(os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")))
+    n_workers = get_configured_num_workers(config)
+    if n_workers > 1:
+        if verbose_tests:
+            terminalreporter.write_sep("*", "List of tests *not* run in parallel")
+        else:
+            terminalreporter.write_sep("*", "Some tests *not* run in parallel")
+
+    num_serial = 0
+    stats = terminalreporter.stats
+    for stat_category in stats:
+        reports = stats[stat_category]
+        for report in reports:
+            if getattr(report, "when", None) == "call":
+                report_props = dict(report.user_properties)
+                if "n_threads" not in report_props:
+                    if verbose_tests:
+                        reason = report_props.get("thread_unsafe_reason", None)
+                        if reason:
+                            terminalreporter.line(
+                                f'{report.nodeid} skipped with reason: "{reason}"'
+                            )
+                        else:
+                            terminalreporter.line(report.nodeid)
+                    num_serial += 1
+
+    if n_workers > 1 and not verbose_tests:
+        terminalreporter.line(
+            f"{num_serial} tests were not run in parallel "
+            "because of use of thread-unsafe functionality, "
+            "to list the tests that were skipped, re-run "
+            "while setting PYTEST_RUN_PARALLEL_VERBOSE=1 "
+            "in your shell environment"
+        )
 
 
 @pytest.fixture

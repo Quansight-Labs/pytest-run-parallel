@@ -126,7 +126,7 @@ more detail about using pytest in a multithreaded context on the free-threaded
 build of Python.
 
 We suggest marking tests that are incompatible with this plugin's current design
-with ``@pytest.mark.thread_unsafe``.
+with ``@pytest.mark.thread_unsafe`` or ``@pytest.mark.thread_unsafe(reason="...")``.
 
 The following functions and modules are known to be thread-unsafe and
 pytest-run-parallel will automatically not run tests using them in parallel:
@@ -255,6 +255,30 @@ produced by all threads during an specific execution step are the same:
         c = None
         # Check that the values for a, b, c are the same across tests
         thread_comp(a=a, b=b, c=c)
+
+Tracing
+---------
+
+If you run pytest with verbose output (e.g. by passing ``-v`` in your pytest
+invocation), you will see that tests are annotated to either "PASS" or
+"PARALLEL PASS". A "PASS" indicates the test was run on a single thread, whereas
+"PARALLEL PASS" indicates the test passed and was run in a thread pool. If a
+test was not run in a thread pool because pytest-run-parallel detected use of
+thread-unsafe functionality, the reason will be printed as well.
+
+If you are running pytest in the default configuration without ``-v``, then
+tests that pass in a thread pool will be annotated with a slightly different dot
+character, allowing you to visually pick out when tests are not run in parallel.
+
+For example in the output for this file:
+
+    tests/test_kx.py ·....·
+
+Only the first and last tests are run in parallel.
+
+In order to list the tests that were marked as thread-unsafe and were not executed
+in parallel, you can set the ``PYTEST_RUN_PARALLEL_VERBOSE`` environment variable
+to 1.
 
 Contributing
 ------------

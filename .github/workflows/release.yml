@@ -22,7 +22,7 @@ jobs:
           python-version: 3.11
       - name: Package wheel
         run: |
-          pip install build twine
+          pip install build twine pkginfo
           python -m build . --wheel --sdist
       - name: upload dists
         uses: actions/upload-artifact@v4

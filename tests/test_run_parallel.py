@@ -9,6 +9,11 @@ except ImportError:
     psutil = None
 
 try:
+    import hypothesis
+except ImportError:
+    hypothesis = None
+
+try:
     from os import process_cpu_count
 except ImportError:
     process_cpu_count = None
@@ -311,7 +316,7 @@ def test_num_parallel_threads_fixture(pytester):
     os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
 
     result.stdout.fnmatch_lines(
-        ["*List of tests *not* run in parallel*", "*::test_single_threaded*"],
+        ["*pytest-run-parallel report*", "*::test_single_threaded*"],
         consecutive=True,
     )
 
@@ -1004,6 +1009,7 @@ def test_thread_unsafe_function_attr(pytester):
     )
 
 
+@pytest.mark.skipif(hypothesis is None, reason='hypothesis needs to be installed')
 def test_detect_hypothesis(pytester):
     pytester.makepyfile("""
     from hypothesis import given, strategies as st, settings, HealthCheck

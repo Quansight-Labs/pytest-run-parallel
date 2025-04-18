@@ -299,7 +299,7 @@ def test_num_parallel_threads_fixture(pytester):
             "*1 tests were not run in parallel because of use of "
             "thread-unsafe functionality, to list the tests that "
             "were skipped, re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1"
-            " in your shell environment"
+            " in your shell environment",
         ]
     )
 
@@ -311,11 +311,8 @@ def test_num_parallel_threads_fixture(pytester):
     os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
 
     result.stdout.fnmatch_lines(
-        [
-            "*List of tests *not* run in parallel*",
-            "*::test_single_threaded*"
-        ],
-        consecutive=True
+        ["*List of tests *not* run in parallel*", "*::test_single_threaded*"],
+        consecutive=True,
     )
 
 

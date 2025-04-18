@@ -207,7 +207,7 @@ def pytest_itemcollected(item):
 
 
 @pytest.hookimpl(trylast=True)
-def pytest_report_collectionfinish(config, start_path, startdir, items):
+def pytest_report_collectionfinish(config, start_path, items):
     parallel_count = 0
     for item in items:
         marker = item.get_closest_marker("parallel_threads")

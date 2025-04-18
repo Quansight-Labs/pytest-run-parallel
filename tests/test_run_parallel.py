@@ -281,6 +281,10 @@ def test_num_parallel_threads_fixture(pytester):
         @pytest.mark.parallel_threads(2)
         def test_should_yield_marker_threads(num_parallel_threads):
             assert num_parallel_threads == 2
+
+        @pytest.mark.parallel_threads(1)
+        def test_single_threaded(num_parallel_threads):
+            assert num_parallel_threads == 1
     """)
 
     # run pytest with the following cmd args
@@ -291,7 +295,27 @@ def test_num_parallel_threads_fixture(pytester):
         [
             "*::test_should_yield_global_threads PARALLEL PASSED*",
             "*::test_should_yield_marker_threads PARALLEL PASSED*",
+            "*::test_single_threaded PASSED*",
+            "*1 tests were not run in parallel because of use of "
+            "thread-unsafe functionality, to list the tests that "
+            "were skipped, re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1"
+            " in your shell environment"
         ]
+    )
+
+    # Re-run with verbose output
+    orig = os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "1"
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
+
+    result.stdout.fnmatch_lines(
+        [
+            "*List of tests *not* run in parallel*",
+            "*::test_single_threaded*"
+        ],
+        consecutive=True
     )
 
 

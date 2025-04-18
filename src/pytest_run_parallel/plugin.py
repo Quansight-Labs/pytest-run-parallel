@@ -262,7 +262,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         for report in reports:
             if getattr(report, "when", None) == "call":
                 report_props = dict(report.user_properties)
-                if "n_threads" not in report_props:
+                if "n_threads" not in report_props or report_props['n_threads'] == 1:
                     if verbose_tests:
                         reason = report_props.get("thread_unsafe_reason", None)
                         if reason:

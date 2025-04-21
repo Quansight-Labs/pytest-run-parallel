@@ -279,8 +279,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                 "while setting PYTEST_RUN_PARALLEL_VERBOSE=1 "
                 "in your shell environment"
             )
-        else:
-            terminalreporter.line("All tests were run in parallel! 🎉")
+    if n_workers > 1 and num_serial == 0:
+        terminalreporter.line("All tests were run in parallel! 🎉")
 
 
 @pytest.fixture

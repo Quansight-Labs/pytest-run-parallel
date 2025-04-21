@@ -1025,3 +1025,32 @@ def test_detect_hypothesis(pytester):
             "*::test_uses_hypothesis PASSED*",
         ]
     )
+
+
+def test_all_tests_in_parallel(pytester):
+    pytester.makepyfile("""
+    def test_parallel_1(num_parallel_threads):
+        assert num_parallel_threads == 10
+
+    def test_parallel_2(num_parallel_threads):
+        assert num_parallel_threads == 10
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*All tests were run in parallel! 🎉*",
+        ]
+    )
+
+    # re-run with PYTEST_RUN_PARALLEL_VERBOSE=1
+    orig = os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "1"
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
+
+    result.stdout.fnmatch_lines(
+        [
+            "*All tests were run in parallel! 🎉*",
+        ]
+    )

@@ -1054,3 +1054,20 @@ def test_all_tests_in_parallel(pytester):
             "*All tests were run in parallel! 🎉*",
         ]
     )
+
+
+def test_recurse_assign(pytester):
+    pytester.makepyfile("""
+    import pytest
+
+    def test_function_recurse_on_assign(num_parallel_threads):
+        w = pytest.warns(UserWarning)
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_function_recurse_on_assign PASSED*",
+        ]
+    )

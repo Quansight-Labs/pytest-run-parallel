@@ -250,10 +250,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     verbose_tests = bool(int(os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")))
     n_workers = get_configured_num_workers(config)
     if n_workers > 1:
-        if verbose_tests:
-            terminalreporter.write_sep("*", "List of tests *not* run in parallel")
-        else:
-            terminalreporter.write_sep("*", "Some tests *not* run in parallel")
+        terminalreporter.write_sep("*", "pytest-run-parallel report")
 
     num_serial = 0
     stats = terminalreporter.stats
@@ -262,7 +259,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         for report in reports:
             if getattr(report, "when", None) == "call":
                 report_props = dict(report.user_properties)
-                if "n_threads" not in report_props:
+                if "n_threads" not in report_props or report_props["n_threads"] == 1:
                     if verbose_tests:
                         reason = report_props.get("thread_unsafe_reason", None)
                         if reason:
@@ -274,13 +271,16 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                     num_serial += 1
 
     if n_workers > 1 and not verbose_tests:
-        terminalreporter.line(
-            f"{num_serial} tests were not run in parallel "
-            "because of use of thread-unsafe functionality, "
-            "to list the tests that were skipped, re-run "
-            "while setting PYTEST_RUN_PARALLEL_VERBOSE=1 "
-            "in your shell environment"
-        )
+        if num_serial > 0:
+            terminalreporter.line(
+                f"{num_serial} tests were not run in parallel "
+                "because of use of thread-unsafe functionality, "
+                "to list the tests that were skipped, re-run "
+                "while setting PYTEST_RUN_PARALLEL_VERBOSE=1 "
+                "in your shell environment"
+            )
+    if n_workers > 1 and num_serial == 0:
+        terminalreporter.line("All tests were run in parallel! 🎉")
 
 
 @pytest.fixture

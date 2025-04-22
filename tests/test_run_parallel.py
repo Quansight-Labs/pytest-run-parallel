@@ -9,6 +9,11 @@ except ImportError:
     psutil = None
 
 try:
+    import hypothesis
+except ImportError:
+    hypothesis = None
+
+try:
     from os import process_cpu_count
 except ImportError:
     process_cpu_count = None
@@ -281,6 +286,10 @@ def test_num_parallel_threads_fixture(pytester):
         @pytest.mark.parallel_threads(2)
         def test_should_yield_marker_threads(num_parallel_threads):
             assert num_parallel_threads == 2
+
+        @pytest.mark.parallel_threads(1)
+        def test_single_threaded(num_parallel_threads):
+            assert num_parallel_threads == 1
     """)
 
     # run pytest with the following cmd args
@@ -291,7 +300,24 @@ def test_num_parallel_threads_fixture(pytester):
         [
             "*::test_should_yield_global_threads PARALLEL PASSED*",
             "*::test_should_yield_marker_threads PARALLEL PASSED*",
+            "*::test_single_threaded PASSED*",
+            "*1 tests were not run in parallel because of use of "
+            "thread-unsafe functionality, to list the tests that "
+            "were skipped, re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1"
+            " in your shell environment",
         ]
+    )
+
+    # Re-run with verbose output
+    orig = os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "1"
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
+
+    result.stdout.fnmatch_lines(
+        ["*pytest-run-parallel report*", "*::test_single_threaded*"],
+        consecutive=True,
     )
 
 
@@ -983,6 +1009,7 @@ def test_thread_unsafe_function_attr(pytester):
     )
 
 
+@pytest.mark.skipif(hypothesis is None, reason="hypothesis needs to be installed")
 def test_detect_hypothesis(pytester):
     pytester.makepyfile("""
     from hypothesis import given, strategies as st, settings, HealthCheck
@@ -996,5 +1023,34 @@ def test_detect_hypothesis(pytester):
     result.stdout.fnmatch_lines(
         [
             "*::test_uses_hypothesis PASSED*",
+        ]
+    )
+
+
+def test_all_tests_in_parallel(pytester):
+    pytester.makepyfile("""
+    def test_parallel_1(num_parallel_threads):
+        assert num_parallel_threads == 10
+
+    def test_parallel_2(num_parallel_threads):
+        assert num_parallel_threads == 10
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*All tests were run in parallel! 🎉*",
+        ]
+    )
+
+    # re-run with PYTEST_RUN_PARALLEL_VERBOSE=1
+    orig = os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "1"
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
+
+    result.stdout.fnmatch_lines(
+        [
+            "*All tests were run in parallel! 🎉*",
         ]
     )

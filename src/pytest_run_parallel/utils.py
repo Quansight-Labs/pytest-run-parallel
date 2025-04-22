@@ -111,6 +111,8 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                     f"calls thread-unsafe function: f{name_node} "
                     "(inferred via func.__thread_safe__ == False)"
                 )
+            else:
+                self.generic_visit(node)
 
 
 def identify_thread_unsafe_nodes(fn, skip_set, level=0):

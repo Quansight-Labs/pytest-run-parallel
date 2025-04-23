@@ -1040,8 +1040,7 @@ def test_detect_unittest_mock(pytester):
     result = pytester.runpytest("--parallel-threads=10", "-v")
     result.stdout.fnmatch_lines(
         [
-            r"*::test_uses_mock PASSED*"
-            r"calls thread-unsafe function: mock.patch*",
+            r"*::test_uses_mock PASSED*" r"calls thread-unsafe function: mock.patch*",
         ]
     )
 

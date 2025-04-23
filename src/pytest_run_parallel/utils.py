@@ -34,6 +34,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             ("_pytest.recwarn", "warns"),
             ("_pytest.recwarn", "deprecated_call"),
             ("warnings", "catch_warnings"),
+            ("mock", "patch"),  # unittest.mock
         } | set(skip_set)
         modules = {mod.split(".")[0] for mod, _ in self.blacklist}
         modules |= {mod for mod, _ in self.blacklist}
@@ -68,7 +69,8 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                 if (real_mod, node.func.attr) in self.blacklist:
                     self.thread_unsafe = True
                     self.thread_unsafe_reason = (
-                        f"calls thread-unsafe function: {node.func.attr}"
+                        "calls thread-unsafe function: "
+                        f"{real_mod}.{node.func.attr}"
                     )
                 elif self.level < 2:
                     if node.func.value.id in getattr(self.fn, "__globals__", {}):

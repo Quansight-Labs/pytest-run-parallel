@@ -1027,6 +1027,25 @@ def test_detect_hypothesis(pytester):
     )
 
 
+def test_detect_unittest_mock(pytester):
+    pytester.makepyfile("""
+    import sys
+    from unittest import mock
+
+    @mock.patch("sys.platform", "VAX")
+    def test_uses_mock(num_parallel_threads):
+        assert sys.platform == "VAX"
+        assert num_parallel_threads == 1
+    """)
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            r"*::test_uses_mock PASSED*"
+            r"calls thread-unsafe function: mock.patch*",
+        ]
+    )
+
+
 def test_all_tests_in_parallel(pytester):
     pytester.makepyfile("""
     def test_parallel_1(num_parallel_threads):

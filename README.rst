@@ -135,6 +135,7 @@ pytest-run-parallel will automatically not run tests using them in parallel:
 * ``pytest.deprecated_call``
 * The pytest ``recwarn`` fixture
 * ``warnings.catch_warnings``
+* ``unittest.mock``
 * Any test using `hypothesis <https://hypothesis.readthedocs.io/en/latest/>`_.
 
 Additionally, if a set of fixtures is known to be thread unsafe, tests that use

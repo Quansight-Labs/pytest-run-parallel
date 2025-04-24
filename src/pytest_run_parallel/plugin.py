@@ -95,9 +95,7 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
             for _ in range(0, n_workers):
                 worker_kwargs = kwargs
                 workers.append(
-                    threading.Thread(
-                        target=closure, args=args, kwargs=worker_kwargs
-                    )
+                    threading.Thread(target=closure, args=args, kwargs=worker_kwargs)
                 )
 
             num_completed = 0

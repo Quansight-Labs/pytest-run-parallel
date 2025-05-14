@@ -803,6 +803,9 @@ def test_thread_unsafe_fixtures(pytester):
         def test_capsys(capsys, num_parallel_threads):
             assert num_parallel_threads == 1
 
+        def test_monkeypatch(monkeypatch, num_parallel_threads):
+            assert num_parallel_threads == 1
+
         def test_recwarn(recwarn, num_parallel_threads):
             assert num_parallel_threads == 1
 

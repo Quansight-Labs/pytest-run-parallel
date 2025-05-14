@@ -669,8 +669,8 @@ def test_auto_detect_cpus_psutil_cpu_count(
 ) -> None:
     import psutil
 
-    monkeypatch.setattr(
-        psutil.Process, "cpu_affinity", lambda self: None, raising=False
+    monkeypatch.delattr(
+        psutil.Process, "cpu_affinity", raising=False
     )
     monkeypatch.setattr(psutil, "cpu_count", lambda: 10)
 

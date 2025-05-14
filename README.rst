@@ -133,6 +133,8 @@ pytest-run-parallel will automatically not run tests using them in parallel:
 
 * ``pytest.warns``
 * ``pytest.deprecated_call``
+* The pytest ``capsys`` fixture
+* The pytest ``monkeypath`` fixture
 * The pytest ``recwarn`` fixture
 * ``warnings.catch_warnings``
 * ``unittest.mock``

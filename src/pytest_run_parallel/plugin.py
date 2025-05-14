@@ -125,6 +125,7 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
 
 _thread_unsafe_fixtures = {
     "capsys",
+    "monkeypatch",
     "recwarn",
 }
 

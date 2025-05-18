@@ -1,4 +1,5 @@
 import ast
+import functools
 import inspect
 import threading
 import types
@@ -116,6 +117,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                 self.generic_visit(node)
 
 
+@functools.lru_cache
 def identify_thread_unsafe_nodes(fn, skip_set, level=0):
     if is_hypothesis_test(fn):
         return True, "uses hypothesis"

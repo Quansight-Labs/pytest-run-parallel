@@ -172,8 +172,7 @@ def pytest_itemcollected(item):
     skipped_functions = [
         x.split(".") for x in item.config.getini("thread_unsafe_functions")
     ]
-    skipped_functions = frozenset((".".join(x[:-1]), x[-1]) for x in
-                                  skipped_functions)
+    skipped_functions = {(".".join(x[:-1]), x[-1]) for x in skipped_functions}
 
     if n_workers > 1:
         thread_unsafe, thread_unsafe_reason = identify_thread_unsafe_nodes(

@@ -117,8 +117,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                 self.generic_visit(node)
 
 
-@functools.lru_cache
-def identify_thread_unsafe_nodes(fn, skip_set, level=0):
+def _identify_thread_unsafe_nodes(fn, skip_set, level=0):
     if is_hypothesis_test(fn):
         return True, "uses hypothesis"
     try:
@@ -129,6 +128,17 @@ def identify_thread_unsafe_nodes(fn, skip_set, level=0):
     visitor = ThreadUnsafeNodeVisitor(fn, skip_set, level=level)
     visitor.visit(tree)
     return visitor.thread_unsafe, visitor.thread_unsafe_reason
+
+
+cached_thread_unsafe_identify = functools.lru_cache(_identify_thread_unsafe_nodes)
+
+
+def identify_thread_unsafe_nodes(fn, skip_set, level=0):
+    try:
+        return cached_thread_unsafe_identify(fn, skip_set, level=level)
+    except TypeError:
+        # skip caching if we hit an error about fn not being hashable
+        return _identify_thread_unsafe_nodes(fn, skip_set, level=level)
 
 
 class ThreadComparator:

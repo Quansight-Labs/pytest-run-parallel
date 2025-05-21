@@ -134,7 +134,10 @@ cached_thread_unsafe_identify = functools.lru_cache(_identify_thread_unsafe_node
 
 
 def identify_thread_unsafe_nodes(fn, skip_set, level=0):
-    return cached_thread_unsafe_identify(fn, skip_set, level=level)
+    try:
+        return cached_thread_unsafe_identify(fn, skip_set, level=level)
+    except TypeError:
+        return _identify_thread_unsafe_nodes(fn, skip_set, level=level)
 
 
 class ThreadComparator:

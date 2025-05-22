@@ -72,8 +72,17 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
         failed = None
         barrier = threading.Barrier(n_workers)
         original_switch = sys.getswitchinterval()
+        new_switch = 1e-6
+        for _ in range(3):
+            try:
+                sys.setswitchinterval(new_switch)
+                break
+            except ValueError:
+                new_switch *= 10
+        else:
+            sys.setswitchinterval(original_switch)
+
         try:
-            sys.setswitchinterval(0.000001)
 
             def closure(*args, **kwargs):
                 for _ in range(n_iterations):

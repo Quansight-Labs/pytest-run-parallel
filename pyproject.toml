@@ -66,7 +66,7 @@ exclude = ["docs/conf.py"]
 select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.tox]
-env_list = ["py38", "py39", "py310", "py311", "py312", "py313", "py313t", "pypy3", "ruff"]
+env_list = ["py38", "py39", "py310", "py311", "py312", "py313", "py313t", "psutil", "pypy3", "ruff"]
 
 [tool.tox.env_run_base]
 deps = [
@@ -97,12 +97,18 @@ skip_install = true
 deps = ["ruff"]
 commands = [["ruff", "check"]]
 
+[tool.tox.env.psutil]
+basepython = ["python3.13"]
+description = "run tests with psutil installed"
+extras = ["psutil"]
+
+
 [tool.tox.gh.python]
 "3.8" = ["py38"]
 "3.9" = ["py39"]
 "3.10" = ["py310"]
 "3.11" = ["py311"]
 "3.12" = ["py312"]
-"3.13" = ["py313"]
+"3.13" = ["py313", "psutil"]
 "3.13t" = ["py313t"]
 "pypy-3.8" = ["pypy3"]

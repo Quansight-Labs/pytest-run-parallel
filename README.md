@@ -271,7 +271,9 @@ are not run in parallel.
 
 For example in the output for this file:
 
-> tests/test_kx.py ·....·
+```
+tests/test_kx.py ·....·
+```
 
 Only the first and last tests are run in parallel.
 

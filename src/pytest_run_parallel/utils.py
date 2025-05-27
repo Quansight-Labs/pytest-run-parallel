@@ -213,8 +213,7 @@ def get_logical_cpus():
         process = psutil.Process()
         try:
             cpu_cores = process.cpu_affinity()
-            if cpu_cores is not None:
-                return len(cpu_cores)
+            return len(cpu_cores)
         except AttributeError:
             cpu_cores = psutil.cpu_count()
             if cpu_cores is not None:

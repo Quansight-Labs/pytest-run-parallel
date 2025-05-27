@@ -669,9 +669,7 @@ def test_auto_detect_cpus_psutil_cpu_count(
 ) -> None:
     import psutil
 
-    monkeypatch.setattr(
-        psutil.Process, "cpu_affinity", lambda self: None, raising=False
-    )
+    monkeypatch.delattr(psutil.Process, "cpu_affinity", raising=False)
     monkeypatch.setattr(psutil, "cpu_count", lambda: 10)
 
     pytester.makepyfile("""
@@ -699,9 +697,7 @@ def test_auto_detect_process_cpu_count(
     with suppress(ImportError):
         import psutil
 
-        monkeypatch.setattr(
-            psutil.Process, "cpu_affinity", lambda self: None, raising=False
-        )
+        monkeypatch.delattr(psutil.Process, "cpu_affinity", raising=False)
         monkeypatch.setattr(psutil, "cpu_count", lambda: None)
 
     monkeypatch.setattr("os.process_cpu_count", lambda: 10)
@@ -732,9 +728,7 @@ def test_auto_detect_sched_getaffinity(
     with suppress(ImportError):
         import psutil
 
-        monkeypatch.setattr(
-            psutil.Process, "cpu_affinity", lambda self: None, raising=False
-        )
+        monkeypatch.delattr(psutil.Process, "cpu_affinity", raising=False)
         monkeypatch.setattr(psutil, "cpu_count", lambda: None)
 
     monkeypatch.setattr("os.process_cpu_count", lambda: None, raising=False)
@@ -762,9 +756,7 @@ def test_auto_detect_cpu_count(
     with suppress(ImportError):
         import psutil
 
-        monkeypatch.setattr(
-            psutil.Process, "cpu_affinity", lambda self: None, raising=False
-        )
+        monkeypatch.delattr(psutil.Process, "cpu_affinity", raising=False)
         monkeypatch.setattr(psutil, "cpu_count", lambda: None)
 
     monkeypatch.setattr("os.process_cpu_count", lambda: None, raising=False)

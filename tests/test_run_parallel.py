@@ -1084,3 +1084,24 @@ def test_recurse_assign(pytester):
             "*::test_function_recurse_on_assign PASSED*",
         ]
     )
+
+
+def test_failed_thread_unsafe(pytester):
+    pytester.makepyfile("""
+    import pytest
+
+    @pytest.mark.thread_unsafe
+    def test1():
+        assert False
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    assert result.ret == 1
+    print(result.stdout)
+    result.stdout.fnmatch_lines(
+        [
+            "*::test1 FAILED *thread-unsafe*: uses thread_unsafe marker*",
+            "* FAILURES *",
+            "*1 failed*",
+        ]
+    )

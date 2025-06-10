@@ -249,7 +249,7 @@ def pytest_report_teststatus(report, config):
             )
         if report.outcome == "failed":
             return (
-                "passed",
+                "failed",
                 "x",
                 f"FAILED ([thread-unsafe]: {props['thread_unsafe_reason']})",
             )

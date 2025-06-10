@@ -243,7 +243,8 @@ def test_skip_if_parallel(num_parallel_threads):
 
 You can skip tests marked as or detected to be thread-unsafe by passing
 `--skip-thread-unsafe` in your pytest invocation. This is useful when running
-pytest-run-parallel under [Thread Sanitizer](). Setting
+pytest-run-parallel under [Thread
+Sanitizer](https://clang.llvm.org/docs/ThreadSanitizer.html). Setting
 `--skip-thread-unsafe=True` will avoid unnecessarily running tests where thread
 sanitizer cannot detect races because the test is not parallelized.
 

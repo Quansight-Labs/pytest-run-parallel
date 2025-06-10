@@ -589,6 +589,16 @@ def test_thread_unsafe_marker(pytester):
         ]
     )
 
+    # check that skipping works too
+    result = pytester.runpytest(
+        "--parallel-threads=10", "--skip-thread-unsafe=True", "-v")
+
+    result.stdout.fnmatch_lines([
+        "*::test_should_run_single SKIPPED*",
+        "*::test_should_run_single_2 SKIPPED*"
+        ]
+    )
+
 
 def test_pytest_warns_detection(pytester):
     # create a temporary pytest test module
@@ -636,6 +646,18 @@ def test_pytest_warns_detection(pytester):
         ]
     )
 
+    # check that skipping works too
+    result = pytester.runpytest(
+        "--parallel-threads=10", "--skip-thread-unsafe=True", "-v")
+
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_single_thread_warns_1 SKIPPED*",
+            "*::test_single_thread_warns_2 SKIPPED*",
+            "*::test_single_thread_warns_3 SKIPPED*",
+            "*::test_single_thread_warns_4 SKIPPED*",
+        ]
+    )
 
 @pytest.mark.skipif(psutil is None, reason="psutil needs to be installed")
 def test_auto_detect_cpus_psutil_affinity(

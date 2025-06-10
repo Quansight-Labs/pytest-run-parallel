@@ -32,6 +32,14 @@ def pytest_addoption(parser):
         type=int,
         help="Set the number of threads used to execute each test concurrently.",
     )
+    parser.addoption(
+        "--skip-thread-unsafe",
+        action="store",
+        dest="skip_thread_unsafe",
+        help="Whether to skip running thread-unsafe tests",
+        type=bool,
+        default=False,
+    )
     parser.addini(
         "thread_unsafe_fixtures",
         "list of thread-unsafe fixture names that cause a test to "
@@ -145,6 +153,8 @@ def pytest_itemcollected(item):
     fixtures = getattr(item, "fixturenames", ())
 
     n_iterations = item.config.option.iterations
+    skip_thread_unsafe = item.config.option.skip_thread_unsafe
+
     m = item.get_closest_marker("iterations")
     if m is not None:
         n_iterations = int(m.args[0])
@@ -153,13 +163,14 @@ def pytest_itemcollected(item):
     if n_workers > 1 and m is not None:
         n_workers = 1
         reason = m.kwargs.get("reason", None)
-        if reason is not None:
-            item.user_properties.append(("thread_unsafe_reason", reason))
+        if reason is None:
+            reason = "uses thread_unsafe marker"
+        item.user_properties.append(("thread_unsafe_reason", reason))
+        if skip_thread_unsafe:
+            item.add_marker(pytest.mark.skip(
+                reason=f"Thread unsafe: {reason}"))
         else:
-            item.user_properties.append(
-                ("thread_unsafe_reason", "uses thread_unsafe marker")
-            )
-        item.add_marker(pytest.mark.parallel_threads(1))
+            item.add_marker(pytest.mark.parallel_threads(1))
 
     if not hasattr(item, "obj"):
         if hasattr(item, "_parallel_custom_item"):
@@ -183,6 +194,8 @@ def pytest_itemcollected(item):
     ]
     skipped_functions = frozenset((".".join(x[:-1]), x[-1]) for x in skipped_functions)
 
+    skip_thread_unsafe = item.config.option.skip_thread_unsafe
+
     if n_workers > 1:
         thread_unsafe, thread_unsafe_reason = identify_thread_unsafe_nodes(
             item.obj, skipped_functions
@@ -190,7 +203,11 @@ def pytest_itemcollected(item):
         if thread_unsafe:
             n_workers = 1
             item.user_properties.append(("thread_unsafe_reason", thread_unsafe_reason))
-            item.add_marker(pytest.mark.parallel_threads(1))
+            if skip_thread_unsafe:
+                item.add_marker(pytest.mark.skip(
+                    reason=f"Thread unsafe: {thread_unsafe_reason}"))
+            else:
+                item.add_marker(pytest.mark.parallel_threads(1))
 
     unsafe_fixtures = _thread_unsafe_fixtures | set(
         item.config.getini("thread_unsafe_fixtures")

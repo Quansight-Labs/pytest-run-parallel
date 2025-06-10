@@ -61,9 +61,11 @@ those fixtures are shared between threads.
 
 ## Features
 
-- Two global CLI flags:
+- Three global CLI flags:
     - `--parallel-threads` to run a test suite in parallel
     - `--iterations` to run multiple times in each thread
+    - `--skip-thread-unsafe` to skip running tests marked as or
+      detected to be thread-unsafe.
 
 - Three corresponding markers:
     - `pytest.mark.parallel_threads(n)` to mark a single test to run
@@ -238,6 +240,12 @@ def test_skip_if_parallel(num_parallel_threads):
         pytest.skip(reason='does not work in parallel')
     ...
 ```
+
+You can skip tests marked as or detected to be thread-unsafe by passing
+`--skip-thread-unsafe` in your pytest invocation. This is useful when running
+pytest-run-parallel under [Thread Sanitizer](). Setting
+`--skip-thread-unsafe=True` will avoid unnecessarily running tests where thread
+sanitizer cannot detect races because the test is not parallelized.
 
 Finally, the `thread_comp` fixture allows for parallel test debugging,
 by providing an instance of `ThreadComparator`, whose `__call__` method

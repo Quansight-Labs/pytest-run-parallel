@@ -167,8 +167,7 @@ def pytest_itemcollected(item):
             reason = "uses thread_unsafe marker"
         item.user_properties.append(("thread_unsafe_reason", reason))
         if skip_thread_unsafe:
-            item.add_marker(pytest.mark.skip(
-                reason=f"Thread unsafe: {reason}"))
+            item.add_marker(pytest.mark.skip(reason=f"Thread unsafe: {reason}"))
         else:
             item.add_marker(pytest.mark.parallel_threads(1))
 
@@ -204,8 +203,9 @@ def pytest_itemcollected(item):
             n_workers = 1
             item.user_properties.append(("thread_unsafe_reason", thread_unsafe_reason))
             if skip_thread_unsafe:
-                item.add_marker(pytest.mark.skip(
-                    reason=f"Thread unsafe: {thread_unsafe_reason}"))
+                item.add_marker(
+                    pytest.mark.skip(reason=f"Thread unsafe: {thread_unsafe_reason}")
+                )
             else:
                 item.add_marker(pytest.mark.parallel_threads(1))
 

@@ -7,12 +7,12 @@ import warnings
 import _pytest.outcomes
 import pytest
 
-from pytest_run_parallel.utils import (
-    ThreadComparator,
-    get_configured_num_workers,
-    get_num_workers,
+from pytest_run_parallel.thread_comparator import ThreadComparator
+from pytest_run_parallel.thread_unsafe_detection import (
+    THREAD_UNSAFE_FIXTURES,
     identify_thread_unsafe_nodes,
 )
+from pytest_run_parallel.utils import get_configured_num_workers, get_num_workers
 
 
 def pytest_addoption(parser):
@@ -140,13 +140,6 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
     return inner
 
 
-_thread_unsafe_fixtures = {
-    "capsys",
-    "monkeypatch",
-    "recwarn",
-}
-
-
 @pytest.hookimpl(trylast=True)
 def pytest_itemcollected(item):
     n_workers = get_num_workers(item.config, item)
@@ -207,7 +200,7 @@ def pytest_itemcollected(item):
             else:
                 item.add_marker(pytest.mark.parallel_threads(1))
 
-    unsafe_fixtures = _thread_unsafe_fixtures | set(
+    unsafe_fixtures = THREAD_UNSAFE_FIXTURES | set(
         item.config.getini("thread_unsafe_fixtures")
     )
 

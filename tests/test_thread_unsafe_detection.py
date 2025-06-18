@@ -1,4 +1,5 @@
 import os
+import textwrap
 
 import pytest
 
@@ -322,5 +323,47 @@ def test_failed_thread_unsafe(pytester):
             "*::test1 FAILED *thread-unsafe*: uses thread_unsafe marker*",
             "* FAILURES *",
             "*1 failed*",
+        ]
+    )
+
+
+def test_chained_attribute_import(pytester):
+    pytester.makepyfile("""
+    import _pytest.recwarn
+
+    def test_chained_attribute_thread_unsafe_detection(num_parallel_threads):
+        _pytest.recwarn.warns()
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_chained_attribute_thread_unsafe_detection PASSED*",
+        ]
+    )
+
+
+def test_chained_attribute_thread_safe_assignment(pytester):
+    pytester.mkpydir("mod")
+    file = pytester.path / "mod" / "submod.py"
+    file.write_text(
+        textwrap.dedent("""
+    def to_skip():
+        __thread_safe__ = False
+    """)
+    )
+    pytester.makepyfile("""
+    import mod.submod
+
+    def test_chained_attribute_thread_safe_assignment(num_parallel_threads):
+        mod.submod.to_skip()
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_chained_attribute_thread_safe_assignment PASSED*",
         ]
     )

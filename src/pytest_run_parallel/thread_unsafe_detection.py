@@ -138,18 +138,13 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             self._recursive_analyze_name(node)
 
     def visit_Call(self, node):
-        if self.thread_unsafe:
-            return
-
         if isinstance(node.func, ast.Attribute):
             self._visit_attribute_call(node.func)
         elif isinstance(node.func, ast.Name):
             self._visit_name_call(node.func)
+        self.generic_visit(node)
 
     def visit_Assign(self, node):
-        if self.thread_unsafe:
-            return
-
         if len(node.targets) == 1:
             name_node = node.targets[0]
             value_node = node.value
@@ -159,8 +154,13 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                     f"calls thread-unsafe function: f{name_node} "
                     "(inferred via func.__thread_safe__ == False)"
                 )
-            else:
-                self.generic_visit(node)
+
+        self.generic_visit(node)
+
+    def visit(self, node):
+        if self.thread_unsafe:
+            return
+        return super().visit(node)
 
 
 def _identify_thread_unsafe_nodes(fn, skip_set, level=0):

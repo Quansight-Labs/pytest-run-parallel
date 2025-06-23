@@ -367,3 +367,40 @@ def test_chained_attribute_thread_safe_assignment(pytester):
             "*::test_chained_attribute_thread_safe_assignment PASSED*",
         ]
     )
+
+
+def test_wrapped_function_call(pytester):
+    pytester.makepyfile("""
+    import pytest
+
+    def wrapper(x):
+        return x
+
+    def test_wrapped_function_call(num_parallel_threads):
+        wrapper(pytest.warns())
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_wrapped_function_call PASSED*",
+        ]
+    )
+
+
+def test_thread_unsafe_function_call_in_assignment(pytester):
+    pytester.makepyfile("""
+    import pytest
+
+    def test_thread_unsafe_function_call_in_assignment(num_parallel_threads):
+        x = y = pytest.warns()
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_thread_unsafe_function_call_in_assignment PASSED*",
+        ]
+    )

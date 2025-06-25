@@ -131,13 +131,13 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                 )
 
     def _visit_name_call(self, node):
-        recurse = True
         if node.id in self.func_aliases:
             if self.func_aliases[node.id] in self.blacklist:
                 self.thread_unsafe = True
                 self.thread_unsafe_reason = f"calls thread-unsafe function: {node.id}"
-                recurse = False
-        if recurse and self.level < 2:
+                return
+
+        if self.level < 2:
             self._recursive_analyze_name(node)
 
     def visit_Call(self, node):
@@ -159,6 +159,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                     f"calls thread-unsafe function: {self.fn.__name__} "
                     "(inferred via func.__thread_safe__ == False)"
                 )
+                return
 
         self.generic_visit(node)
 

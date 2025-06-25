@@ -151,10 +151,12 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
         if len(node.targets) == 1:
             name_node = node.targets[0]
             value_node = node.value
-            if getattr(name_node, "id", None) == "__thread_safe__":
-                self.thread_unsafe = not bool(value_node.value)
+            if getattr(name_node, "id", None) == "__thread_safe__" and not bool(
+                value_node.value
+            ):
+                self.thread_unsafe = True
                 self.thread_unsafe_reason = (
-                    f"calls thread-unsafe function: f{name_node} "
+                    f"calls thread-unsafe function: {self.fn.__name__} "
                     "(inferred via func.__thread_safe__ == False)"
                 )
 

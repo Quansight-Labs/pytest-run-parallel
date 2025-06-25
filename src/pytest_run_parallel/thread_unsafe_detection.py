@@ -23,20 +23,30 @@ THREAD_UNSAFE_FIXTURES = {
 }
 
 
+BLOCKLIST = {
+    ("pytest", "warns"),
+    ("pytest", "deprecated_call"),
+    ("_pytest.recwarn", "warns"),
+    ("_pytest.recwarn", "deprecated_call"),
+    ("warnings", "catch_warnings"),
+    ("unittest.mock", "*"),
+    ("mock", "*"),
+    ("ctypes", "*"),
+}
+
+
 class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
     def __init__(self, fn, skip_set, level=0):
         self.thread_unsafe = False
         self.thread_unsafe_reason = None
-        self.blacklist = {
-            ("pytest", "warns"),
-            ("pytest", "deprecated_call"),
-            ("_pytest.recwarn", "warns"),
-            ("_pytest.recwarn", "deprecated_call"),
-            ("warnings", "catch_warnings"),
-            ("mock", "patch"),  # unittest.mock
-        } | set(skip_set)
-        modules = {mod.split(".")[0] for mod, _ in self.blacklist}
-        modules |= {mod for mod, _ in self.blacklist}
+        self.blocklist = BLOCKLIST | skip_set
+        self.module_blocklist = {mod for mod, func in self.blocklist if func == "*"}
+        self.function_blocklist = {
+            (mod, func) for mod, func in self.blocklist if func != "*"
+        }
+
+        modules = {mod.split(".")[0] for mod, _ in self.blocklist}
+        modules |= {mod for mod, _ in self.blocklist}
 
         self.fn = fn
         self.skip_set = skip_set
@@ -48,13 +58,47 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             if inspect.ismodule(value) and value.__name__ in modules:
                 self.modules_aliases[var_name] = value.__name__
             elif inspect.isfunction(value):
-                real_name = value.__name__
-                for mod in modules:
-                    if mod == value.__module__:
-                        self.func_aliases[var_name] = (mod, real_name)
+                if value.__module__ in modules:
+                    self.func_aliases[var_name] = (value.__module__, value.__name__)
+                    continue
+
+                all_parents = self._create_all_parent_modules(value.__module__)
+                for parent in all_parents:
+                    if parent in modules:
+                        self.func_aliases[var_name] = (parent, value.__name__)
                         break
 
         super().__init__()
+
+    def _create_all_parent_modules(self, module_name):
+        all_parent_modules = set()
+        parent, dot, _ = module_name.rpartition(".")
+        while dot:
+            all_parent_modules.add(parent)
+            parent, dot, _ = parent.rpartition(".")
+        return all_parent_modules
+
+    def _is_module_blocklisted(self, module_name):
+        # fast path
+        if module_name in self.module_blocklist:
+            return True
+
+        # try parent modules
+        all_parents = self._create_all_parent_modules(module_name)
+        if any(parent in self.module_blocklist for parent in all_parents):
+            return True
+        return False
+
+    def _is_function_blocklisted(self, module_name, func_name):
+        # Whole module is blocked
+        if self._is_module_blocklisted(module_name):
+            return True
+
+        # Function is blocked
+        if (module_name, func_name) in self.function_blocklist:
+            return True
+
+        return False
 
     def _recursive_analyze_attribute(self, node):
         current = node
@@ -101,7 +145,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             real_mod = node.value.id
             if real_mod in self.modules_aliases:
                 real_mod = self.modules_aliases[real_mod]
-            if (real_mod, node.attr) in self.blacklist:
+            if self._is_function_blocklisted(real_mod, node.attr):
                 self.thread_unsafe = True
                 self.thread_unsafe_reason = (
                     "calls thread-unsafe function: " f"{real_mod}.{node.attr}"
@@ -112,7 +156,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             chain = self._build_attribute_chain(node)
             module_part = ".".join(chain[:-1])
             func_part = chain[-1]
-            if (module_part, func_part) in self.blacklist:
+            if self._is_function_blocklisted(module_part, func_part):
                 self.thread_unsafe = True
                 self.thread_unsafe_reason = (
                     f"calls thread-unsafe function: {'.'.join(chain)}"
@@ -132,7 +176,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
 
     def _visit_name_call(self, node):
         if node.id in self.func_aliases:
-            if self.func_aliases[node.id] in self.blacklist:
+            if self._is_function_blocklisted(*self.func_aliases[node.id]):
                 self.thread_unsafe = True
                 self.thread_unsafe_reason = f"calls thread-unsafe function: {node.id}"
                 return

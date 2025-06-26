@@ -120,7 +120,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
         if id in getattr(self.fn, "__globals__", {}):
             mod = self.fn.__globals__[id]
             child_fn = _get_child_fn(mod, node)
-            if child_fn is not None and inspect.isfunction(child_fn):
+            if child_fn is not None and callable(child_fn):
                 self.thread_unsafe, self.thread_unsafe_reason = (
                     identify_thread_unsafe_nodes(
                         child_fn, self.skip_set, self.level + 1
@@ -167,7 +167,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
     def _recursive_analyze_name(self, node):
         if node.id in getattr(self.fn, "__globals__", {}):
             child_fn = self.fn.__globals__[node.id]
-            if inspect.isfunction(child_fn):
+            if callable(child_fn):
                 self.thread_unsafe, self.thread_unsafe_reason = (
                     identify_thread_unsafe_nodes(
                         child_fn, self.skip_set, self.level + 1

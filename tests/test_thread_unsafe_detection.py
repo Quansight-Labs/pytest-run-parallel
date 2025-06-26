@@ -449,11 +449,15 @@ def test_thread_unsafe_ctypes_import_from(pytester):
     def test_thread_unsafe_ctypes(num_parallel_threads):
         find_library("m")
         assert num_parallel_threads == 1
+
+    def test_thread_unsafe_not_using_ctypes(num_parallel_threads):
+        assert num_parallel_threads == 10
     """)
 
     result = pytester.runpytest("--parallel-threads=10", "-v")
     result.stdout.fnmatch_lines(
         [
             "*::test_thread_unsafe_ctypes PASSED*",
+            "*::test_thread_unsafe_not_using_ctypes PARALLEL PASSED*",
         ]
     )

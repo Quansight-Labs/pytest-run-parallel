@@ -135,6 +135,7 @@ parallel:
 - The pytest `recwarn` fixture
 - `warnings.catch_warnings`
 - `unittest.mock`
+- `ctypes`
 - Any test using [hypothesis](https://hypothesis.readthedocs.io/en/latest/).
 
 Additionally, if a set of fixtures is known to be thread unsafe, tests
@@ -171,6 +172,16 @@ be registered through the `thread_unsafe_functions` option in the INI file
 thread_unsafe_functions =
     module.submodule.func1
     module.submodule2.func2
+    ...
+```
+
+You can also blocklist entire modules by using an asterisk:
+
+```ini
+[pytest]
+thread_unsafe_functions =
+    module1.*
+    module2.submodule.*
     ...
 ```
 

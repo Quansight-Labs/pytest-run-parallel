@@ -367,3 +367,97 @@ def test_chained_attribute_thread_safe_assignment(pytester):
             "*::test_chained_attribute_thread_safe_assignment PASSED*",
         ]
     )
+
+
+def test_wrapped_function_call(pytester):
+    pytester.makepyfile("""
+    import pytest
+
+    def wrapper(x):
+        return x
+
+    def test_wrapped_function_call(num_parallel_threads):
+        wrapper(pytest.warns())
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_wrapped_function_call PASSED*",
+        ]
+    )
+
+
+def test_thread_unsafe_function_call_in_assignment(pytester):
+    pytester.makepyfile("""
+    import pytest
+
+    def test_thread_unsafe_function_call_in_assignment(num_parallel_threads):
+        x = y = pytest.warns()
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_thread_unsafe_function_call_in_assignment PASSED*",
+        ]
+    )
+
+
+def test_thread_unsafe_unittest_mock_patch_object(pytester):
+    pytester.makepyfile("""
+    import sys
+    import unittest.mock
+
+    @unittest.mock.patch.object(sys, "platform", "VAX")
+    def test_thread_unsafe_unittest_mock_patch_object(num_parallel_threads):
+        assert sys.platform == "VAX"
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_thread_unsafe_unittest_mock_patch_object PASSED*",
+        ]
+    )
+
+
+def test_thread_unsafe_ctypes(pytester):
+    pytester.makepyfile("""
+    import ctypes.util
+
+    def test_thread_unsafe_ctypes(num_parallel_threads):
+        ctypes.util.find_library("m")
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_thread_unsafe_ctypes PASSED*",
+        ]
+    )
+
+
+def test_thread_unsafe_ctypes_import_from(pytester):
+    pytester.makepyfile("""
+    from ctypes.util import find_library
+
+    def test_thread_unsafe_ctypes(num_parallel_threads):
+        find_library("m")
+        assert num_parallel_threads == 1
+
+    def test_thread_unsafe_not_using_ctypes(num_parallel_threads):
+        assert num_parallel_threads == 10
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_thread_unsafe_ctypes PASSED*",
+            "*::test_thread_unsafe_not_using_ctypes PARALLEL PASSED*",
+        ]
+    )

@@ -17,8 +17,9 @@ except ImportError:
             return False
 
 
-WARNINGS_IS_THREADSAFE = (getattr(sys.flags, "context_aware_warnings", 0) and
-                          getattr(sys.flags, "thread_inherit_context", 0))
+WARNINGS_IS_THREADSAFE = getattr(sys.flags, "context_aware_warnings", 0) and getattr(
+    sys.flags, "thread_inherit_context", 0
+)
 CTYPES_IS_THREADSAFE = sys.version_info > (3, 13)
 
 # module, function or "*" for the whole module, is it thread safe?

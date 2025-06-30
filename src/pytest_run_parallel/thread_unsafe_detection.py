@@ -1,6 +1,7 @@
 import ast
 import functools
 import inspect
+import sys
 from textwrap import dedent
 
 try:
@@ -16,22 +17,28 @@ except ImportError:
             return False
 
 
-THREAD_UNSAFE_FIXTURES = {
-    "capsys",
-    "monkeypatch",
-    "recwarn",
+WARNINGS_IS_THREADSAFE = (getattr(sys.flags, "context_aware_warnings", 0) and
+                          getattr(sys.flags, "thread_inherit_context", 0))
+CTYPES_IS_THREADSAFE = sys.version_info > (3, 13)
+
+# module, function or "*" for the whole module, is it thread safe?
+BLOCKLIST = {
+    ("pytest", "warns", WARNINGS_IS_THREADSAFE),
+    ("pytest", "deprecated_call", WARNINGS_IS_THREADSAFE),
+    ("_pytest.recwarn", "warns", WARNINGS_IS_THREADSAFE),
+    ("_pytest.recwarn", "deprecated_call", WARNINGS_IS_THREADSAFE),
+    ("warnings", "catch_warnings", WARNINGS_IS_THREADSAFE),
+    ("unittest.mock", "*", False),
+    ("mock", "*", False),
+    ("ctypes", "*", CTYPES_IS_THREADSAFE),
+    # FIXME: hacky way to detect numpy.testing.suppress_warnings
+    ("self", "_orig_show", False),
 }
 
-
-BLOCKLIST = {
-    ("pytest", "warns"),
-    ("pytest", "deprecated_call"),
-    ("_pytest.recwarn", "warns"),
-    ("_pytest.recwarn", "deprecated_call"),
-    ("warnings", "catch_warnings"),
-    ("unittest.mock", "*"),
-    ("mock", "*"),
-    ("ctypes", "*"),
+THREAD_UNSAFE_FIXTURES = {
+    ("capsys", False),
+    ("monkeypatch", False),
+    ("recwarn", WARNINGS_IS_THREADSAFE),
 }
 
 
@@ -39,7 +46,8 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
     def __init__(self, fn, skip_set, level=0):
         self.thread_unsafe = False
         self.thread_unsafe_reason = None
-        self.blocklist = BLOCKLIST | skip_set
+        self.blocklist = {b[:2] for b in BLOCKLIST if not b[-1]}
+        self.blocklist = self.blocklist | skip_set
         self.module_blocklist = {mod for mod, func in self.blocklist if func == "*"}
         self.function_blocklist = {
             (mod, func) for mod, func in self.blocklist if func != "*"

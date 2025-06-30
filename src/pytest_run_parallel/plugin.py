@@ -200,9 +200,11 @@ def pytest_itemcollected(item):
             else:
                 item.add_marker(pytest.mark.parallel_threads(1))
 
-    unsafe_fixtures = THREAD_UNSAFE_FIXTURES | set(
-        item.config.getini("thread_unsafe_fixtures")
-    )
+    config_unsafe = [(it, False) for it in item.config.getini("thread_unsafe_fixtures")]
+
+    unsafe_fixtures = THREAD_UNSAFE_FIXTURES | set(config_unsafe)
+
+    unsafe_fixtures = {uf[0] for uf in unsafe_fixtures if not uf[1]}
 
     if n_workers > 1 and any(fixture in fixtures for fixture in unsafe_fixtures):
         n_workers = 1

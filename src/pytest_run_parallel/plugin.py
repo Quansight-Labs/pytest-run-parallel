@@ -289,10 +289,9 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                         else:
                             terminalreporter.line(report.nodeid)
                     num_serial += 1
-            elif getattr(report, 'skipped', None):
-                if report.keywords.get('thread_unsafe', 0):
+            elif getattr(report, "skipped", None):
+                if report.keywords.get("thread_unsafe", 0):
                     num_skipped += 1
-
 
     if n_workers > 1 and not verbose_tests:
         if (num_serial + num_skipped) > 0:
@@ -303,8 +302,9 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                 skipped_or_not_run = "not run in parallel"
                 num = num_serial
             terminalreporter.line(
-                f"{num} tests were " + skipped_or_not_run +
-                " because of use of thread-unsafe functionality, "
+                f"{num} tests were "
+                + skipped_or_not_run
+                + " because of use of thread-unsafe functionality, "
                 f"to list the tests that were {skipped_or_not_run}, re-run "
                 "while setting PYTEST_RUN_PARALLEL_VERBOSE=1 "
                 "in your shell environment"

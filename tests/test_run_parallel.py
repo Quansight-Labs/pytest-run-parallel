@@ -280,7 +280,7 @@ def test_num_parallel_threads_fixture(pytester):
             "*::test_single_threaded PASSED*",
             "*1 tests were not run in parallel because of use of "
             "thread-unsafe functionality, to list the tests that "
-            "were skipped, re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1"
+            "were not run in parallel, re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1"
             " in your shell environment",
         ]
     )

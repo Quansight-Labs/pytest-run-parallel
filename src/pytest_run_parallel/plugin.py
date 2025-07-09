@@ -302,9 +302,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                 skipped_or_not_run = "not run in parallel"
                 num = num_serial
             terminalreporter.line(
-                f"{num} tests were "
-                + skipped_or_not_run
-                + " because of use of thread-unsafe functionality, "
+                f"{num} tests were {skipped_or_not_run}"
+                " because of use of thread-unsafe functionality, "
                 f"to list the tests that were {skipped_or_not_run}, re-run "
                 "while setting PYTEST_RUN_PARALLEL_VERBOSE=1 "
                 "in your shell environment"

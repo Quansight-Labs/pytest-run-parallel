@@ -4,6 +4,7 @@ import sys
 import threading
 import warnings
 
+import _pytest.doctest
 import _pytest.outcomes
 import pytest
 
@@ -142,6 +143,27 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
 
 @pytest.hookimpl(trylast=True)
 def pytest_itemcollected(item):
+    if not hasattr(item, "obj"):
+        if not hasattr(item, "_parallel_custom_item"):
+            warnings.warn(
+                f"Encountered pytest item with type {type(item)} with no 'obj' "
+                "attribute, which is incompatible with pytest-run-parallel. "
+                f"Tests using {type(item)} will not run in a thread pool.\n"
+                "The pytest-run-parallel plugin only supports custom collection "
+                "tree objects that wrap Python functions stored in an attribute "
+                "named 'obj'.\n"
+                "Define a '_parallel_custom_item' attribute on the pytest item"
+                "instance or class to silence this warning.\n"
+                "If you do not want to use pytest-run-parallel, uninstall it from "
+                "your environment."
+            )
+        item.add_marker(pytest.mark.parallel_threads(1))
+        return
+
+    if isinstance(item, _pytest.doctest.DoctestItem):
+        item.add_marker(pytest.mark.parallel_threads(1))
+        return
+
     n_workers = get_num_workers(item.config, item)
     fixtures = getattr(item, "fixturenames", ())
 
@@ -163,23 +185,6 @@ def pytest_itemcollected(item):
             item.add_marker(pytest.mark.skip(reason=f"Thread unsafe: {reason}"))
         else:
             item.add_marker(pytest.mark.parallel_threads(1))
-
-    if not hasattr(item, "obj"):
-        if hasattr(item, "_parallel_custom_item"):
-            return
-        warnings.warn(
-            f"Encountered pytest item with type {type(item)} with no 'obj' "
-            "attribute, which is incompatible with pytest-run-parallel. "
-            f"Tests using {type(item)} will not run in a thread pool.\n"
-            "The pytest-run-parallel plugin only supports custom collection "
-            "tree objects that wrap Python functions stored in an attribute "
-            "named 'obj'.\n"
-            "Define a '_parallel_custom_item' attribute on the pytest item"
-            "instance or class to silence this warning.\n"
-            "If you do not want to use pytest-run-parallel, uninstall it from "
-            "your environment."
-        )
-        return
 
     skipped_functions = [
         x.split(".") for x in item.config.getini("thread_unsafe_functions")

@@ -589,3 +589,31 @@ def test_all_tests_in_parallel(pytester):
             "*All tests were run in parallel! 🎉*",
         ]
     )
+
+
+def test_doctests_marked_thread_unsafe(pytester):
+    pytester.makepyfile("""
+    def test_parallel(num_parallel_threads):
+        assert num_parallel_threads == 10
+    """)
+
+    pytester.makefile(
+        ".txt",
+        """
+    hello this is a doctest
+    >>> x = 3
+    >>> x
+    3
+    >>> num_parallel_threads = getfixture("num_parallel_threads")
+    >>> num_parallel_threads
+    1
+    """,
+    )
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_parallel PARALLEL PASSED*",
+            "*::test_doctests_marked_thread_unsafe.txt PASSED*",
+        ]
+    )

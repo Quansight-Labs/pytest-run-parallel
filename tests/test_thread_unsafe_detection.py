@@ -468,3 +468,33 @@ def test_thread_unsafe_ctypes_import_from(pytester):
             "*::test_thread_unsafe_not_using_ctypes PARALLEL PASSED*",
         ]
     )
+
+
+def test_thread_unsafe_pytest_warns_multiline_string(pytester):
+    pytester.makepyfile("""
+import warnings
+import pytest
+
+class TestThreadUnsafePytestWarnsMultilineString:
+    def test_thread_unsafe_pytest_warns_multiline_string1(self, num_parallel_threads):
+        with pytest.warns(UserWarning) as r:
+            warnings.warn("foo", UserWarning)
+        '''
+Hello world'''
+        assert num_parallel_threads == 1
+
+    def test_thread_unsafe_pytest_warns_multiline_string2(self, num_parallel_threads):
+        with pytest.warns(UserWarning) as r:
+            warnings.warn("foo", UserWarning)
+        '''
+Hello world'''
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_thread_unsafe_pytest_warns_multiline_string1 PASSED*",
+            "*::test_thread_unsafe_pytest_warns_multiline_string2 PASSED*",
+        ]
+    )

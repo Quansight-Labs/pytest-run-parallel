@@ -1,7 +1,6 @@
 import ast
 import functools
 import inspect
-from textwrap import dedent
 
 try:
     # added in hypothesis 6.131.0
@@ -216,11 +215,17 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
 def _identify_thread_unsafe_nodes(fn, skip_set, level=0):
     if is_hypothesis_test(fn):
         return True, "uses hypothesis"
+
     try:
         src = inspect.getsource(fn)
-        tree = ast.parse(dedent(src))
     except Exception:
         return False, None
+
+    try:
+        tree = ast.parse(src.lstrip())
+    except Exception:
+        return False, None
+
     visitor = ThreadUnsafeNodeVisitor(fn, skip_set, level=level)
     visitor.visit(tree)
     return visitor.thread_unsafe, visitor.thread_unsafe_reason

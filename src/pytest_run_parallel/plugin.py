@@ -295,7 +295,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                             terminalreporter.line(report.nodeid)
                     num_serial += 1
             elif getattr(report, "skipped", None):
-                if report.keywords.get("thread_unsafe", 0):
+                if getattr(report, "keywords", {}).get("thread_unsafe", 0):
                     num_skipped += 1
 
     if n_workers > 1 and not verbose_tests:

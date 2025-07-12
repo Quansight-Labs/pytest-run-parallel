@@ -327,7 +327,7 @@ def test_failed_thread_unsafe(pytester):
     print(result.stdout)
     result.stdout.fnmatch_lines(
         [
-            "*::test1 FAILED *thread-unsafe*: uses thread_unsafe marker*",
+            "*::test1 FAILED *thread-unsafe*: uses the thread_unsafe marker*",
             "* FAILURES *",
             "*1 failed*",
         ]

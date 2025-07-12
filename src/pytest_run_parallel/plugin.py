@@ -123,7 +123,7 @@ class RunParallelPlugin:
             item.add_marker(pytest.mark.parallel_threads(1))
         self.thread_unsafe[item.nodeid] = reason
 
-    def _is_thread_unsafe(self, item: pytest.Item):
+    def _is_thread_unsafe(self, item):
         m = item.get_closest_marker("thread_unsafe")
         if m is not None:
             reason = m.kwargs.get("reason", None)
@@ -139,7 +139,7 @@ class RunParallelPlugin:
         return identify_thread_unsafe_nodes(item.obj, self.skipped_functions)
 
     @pytest.hookimpl(trylast=True)
-    def pytest_itemcollected(self, item: pytest.Item):
+    def pytest_itemcollected(self, item):
         if not hasattr(item, "obj"):
             if not hasattr(item, "_parallel_custom_item"):
                 warnings.warn(

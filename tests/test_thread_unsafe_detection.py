@@ -253,7 +253,6 @@ def test_thread_unsafe_function_attr(pytester):
     )
 
 
-
 def test_detect_unittest_mock(pytester):
     pytester.makepyfile("""
     import sys

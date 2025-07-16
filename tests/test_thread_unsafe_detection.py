@@ -1,13 +1,6 @@
 import os
 import textwrap
 
-import pytest
-
-try:
-    import hypothesis
-except ImportError:
-    hypothesis = None
-
 
 def test_thread_unsafe_marker(pytester):
     # create a temporary pytest test module
@@ -259,23 +252,6 @@ def test_thread_unsafe_function_attr(pytester):
         ]
     )
 
-
-@pytest.mark.skipif(hypothesis is None, reason="hypothesis needs to be installed")
-def test_detect_hypothesis(pytester):
-    pytester.makepyfile("""
-    from hypothesis import given, strategies as st, settings, HealthCheck
-
-    @given(a=st.none())
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
-    def test_uses_hypothesis(a, num_parallel_threads):
-        assert num_parallel_threads == 1
-    """)
-    result = pytester.runpytest("--parallel-threads=10", "-v")
-    result.stdout.fnmatch_lines(
-        [
-            "*::test_uses_hypothesis PASSED*",
-        ]
-    )
 
 
 def test_detect_unittest_mock(pytester):

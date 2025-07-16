@@ -1,4 +1,10 @@
 import os
+import pytest
+
+try:
+    import hypothesis
+except ImportError:
+    hypothesis = None
 
 
 def test_default_threads(pytester):
@@ -615,5 +621,23 @@ def test_doctests_marked_thread_unsafe(pytester):
         [
             "*::test_parallel PARALLEL PASSED*",
             "*::test_doctests_marked_thread_unsafe.txt PASSED*",
+        ]
+    )
+
+
+@pytest.mark.skipif(hypothesis is None, reason="hypothesis needs to be installed")
+def test_runs_hypothesis_in_parallel(pytester):
+    pytester.makepyfile("""
+    from hypothesis import given, strategies as st, settings, HealthCheck
+
+    @given(a=st.none())
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+    def test_uses_hypothesis(a, num_parallel_threads):
+        assert num_parallel_threads == 10
+    """)
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_uses_hypothesis PARALLEL PASSED*",
         ]
     )

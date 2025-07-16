@@ -224,8 +224,9 @@ def _identify_thread_unsafe_nodes(fn, skip_set, level=0):
     if is_hypothesis_test(fn) and hypothesis_version < HYPOTHESIS_THREADSAFE_VERSION:
         return (
             True,
-            f"uses a thread-unsafe version of hypothesis (before "
-            f"{'.'.join(map(str, HYPOTHESIS_THREADSAFE_VERSION))})",
+            f"uses hypothesis v{'.'.join(map(str, hypothesis_version))}, which "
+            "is before the first thread-safe version "
+            f"(v{'.'.join(map(str, HYPOTHESIS_THREADSAFE_VERSION))})",
         )
 
     try:

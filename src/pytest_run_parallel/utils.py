@@ -11,8 +11,8 @@ def get_configured_num_workers(config):
     return n_workers
 
 
-def get_num_workers(config, item):
-    n_workers = get_configured_num_workers(config)
+def get_num_workers(item):
+    n_workers = get_configured_num_workers(item.config)
     marker = item.get_closest_marker("parallel_threads")
     if marker is not None:
         val = marker.args[0]
@@ -22,4 +22,12 @@ def get_num_workers(config, item):
         else:
             n_workers = int(val)
 
-    return n_workers
+    return n_workers, marker is not None
+
+
+def get_num_iterations(item):
+    n_iterations = item.config.option.iterations
+    marker = item.get_closest_marker("iterations")
+    if marker is not None:
+        n_iterations = int(marker.args[0])
+    return n_iterations, marker is not None

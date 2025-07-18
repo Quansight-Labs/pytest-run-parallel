@@ -65,7 +65,7 @@ exclude = ["docs/conf.py"]
 select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.tox]
-env_list = ["py38", "py39", "py310", "py311", "py312", "py313", "py313t", "psutil", "pypy3", "ruff"]
+env_list = ["py39", "py310", "py311", "py312", "py313", "py313t", "psutil", "pypy3", "ruff"]
 
 [tool.tox.env_run_base]
 deps = [

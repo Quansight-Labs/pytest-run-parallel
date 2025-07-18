@@ -21,7 +21,7 @@ except ImportError:
     hypothesis_version = (0, 0, 0)
 
 
-HYPOTHESIS_THREADSAFE_VERSION = (6, 135, 32)
+HYPOTHESIS_THREADSAFE_VERSION = (6, 135, 33)
 
 THREAD_UNSAFE_FIXTURES = {
     "capsys",

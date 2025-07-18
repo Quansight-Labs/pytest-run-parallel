@@ -136,7 +136,6 @@ parallel:
 - `warnings.catch_warnings`
 - `unittest.mock`
 - `ctypes`
-- Any test using [hypothesis](https://hypothesis.readthedocs.io/en/latest/).
 
 Additionally, if a set of fixtures is known to be thread unsafe, tests
 that use them can be automatically marked as thread unsafe by declaring

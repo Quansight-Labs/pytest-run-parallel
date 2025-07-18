@@ -15,6 +15,14 @@ except ImportError:
             return False
 
 
+try:
+    from hypothesis import __version_info__ as hypothesis_version
+except ImportError:
+    hypothesis_version = (0, 0, 0)
+
+
+HYPOTHESIS_THREADSAFE_VERSION = (6, 135, 33)
+
 THREAD_UNSAFE_FIXTURES = {
     "capsys",
     "monkeypatch",
@@ -213,8 +221,13 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
 
 
 def _identify_thread_unsafe_nodes(fn, skip_set, level=0):
-    if is_hypothesis_test(fn):
-        return True, "uses hypothesis"
+    if is_hypothesis_test(fn) and hypothesis_version < HYPOTHESIS_THREADSAFE_VERSION:
+        return (
+            True,
+            f"uses hypothesis v{'.'.join(map(str, hypothesis_version))}, which "
+            "is before the first thread-safe version "
+            f"(v{'.'.join(map(str, HYPOTHESIS_THREADSAFE_VERSION))})",
+        )
 
     try:
         src = inspect.getsource(fn)

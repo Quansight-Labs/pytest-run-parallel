@@ -100,9 +100,13 @@ class RunParallelPlugin:
             (".".join(x[:-1]), x[-1]) for x in skipped_functions
         )
 
-        self.unsafe_fixtures = THREAD_UNSAFE_FIXTURES | set(
-            config.getini("thread_unsafe_fixtures")
-        )
+        config_unsafe = [
+            (it, False) for it in config.getini("thread_unsafe_fixtures")
+        ]
+
+        unsafe_fixtures = THREAD_UNSAFE_FIXTURES | set(config_unsafe)
+
+        self.unsafe_fixtures = {uf[0] for uf in unsafe_fixtures if not uf[1]}
 
         self.thread_unsafe = {}
         self.run_in_parallel = {}

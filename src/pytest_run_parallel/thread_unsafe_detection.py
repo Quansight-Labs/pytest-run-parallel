@@ -1,6 +1,7 @@
 import ast
 import functools
 import inspect
+import sys
 
 try:
     # added in hypothesis 6.131.0
@@ -14,23 +15,29 @@ except ImportError:
         def is_hypothesis_test(fn):
             return False
 
+WARNINGS_IS_THREADSAFE = (
+    getattr(sys.flags, "context_aware_warnings", 0) and
+    getattr(sys.flags, "thread_inherit_context", 0)
+)
 
-THREAD_UNSAFE_FIXTURES = {
-    "capsys",
-    "monkeypatch",
-    "recwarn",
+CTYPES_IS_THREADSAFE = sys.version_info > (3, 13)
+
+BLOCKLIST = {
+    ("pytest", "warns", WARNINGS_IS_THREADSAFE),
+    ("pytest", "deprecated_call", WARNINGS_IS_THREADSAFE),
+    ("_pytest.recwarn", "warns", WARNINGS_IS_THREADSAFE),
+    ("_pytest.recwarn", "deprecated_call", WARNINGS_IS_THREADSAFE),
+    ("warnings", "catch_warnings", WARNINGS_IS_THREADSAFE),
+    ("unittest.mock", "*", False),
+    ("mock", "*", False),
+    ("ctypes", "*", CTYPES_IS_THREADSAFE),
 }
 
 
-BLOCKLIST = {
-    ("pytest", "warns"),
-    ("pytest", "deprecated_call"),
-    ("_pytest.recwarn", "warns"),
-    ("_pytest.recwarn", "deprecated_call"),
-    ("warnings", "catch_warnings"),
-    ("unittest.mock", "*"),
-    ("mock", "*"),
-    ("ctypes", "*"),
+THREAD_UNSAFE_FIXTURES = {
+    ("capsys", False),
+    ("monkeypatch", False),
+    ("recwarn", WARNINGS_IS_THREADSAFE),
 }
 
 
@@ -38,7 +45,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
     def __init__(self, fn, skip_set, level=0):
         self.thread_unsafe = False
         self.thread_unsafe_reason = None
-        self.blocklist = BLOCKLIST | skip_set
+        self.blocklist = {b[:2] for b in BLOCKLIST if not b[-1]} | skip_set
         self.module_blocklist = {mod for mod, func in self.blocklist if func == "*"}
         self.function_blocklist = {
             (mod, func) for mod, func in self.blocklist if func != "*"

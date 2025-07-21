@@ -92,6 +92,8 @@ class RunParallelPlugin:
     def __init__(self, config):
         self.verbose = bool(int(os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")))
         self.skip_thread_unsafe = config.option.skip_thread_unsafe
+        self.mark_warnings_as_unsafe = config.option.mark_warnings_as_unsafe
+        self.mark_ctypes_as_unsafe = config.option.mark_ctypes_as_unsafe
 
         skipped_functions = [
             x.split(".") for x in config.getini("thread_unsafe_functions")
@@ -100,13 +102,14 @@ class RunParallelPlugin:
             (".".join(x[:-1]), x[-1]) for x in skipped_functions
         )
 
-        config_unsafe = [
-            (it, False) for it in config.getini("thread_unsafe_fixtures")
-        ]
+        unsafe_fixtures = THREAD_UNSAFE_FIXTURES.copy()
+        for item in config.getini("thread_unsafe_fixtures"):
+            unsafe_fixtures[item] = False
 
-        unsafe_fixtures = THREAD_UNSAFE_FIXTURES | set(config_unsafe)
+        if self.mark_warnings_as_unsafe:
+            unsafe_fixtures['recwarn'] = False
 
-        self.unsafe_fixtures = {uf[0] for uf in unsafe_fixtures if not uf[1]}
+        self.unsafe_fixtures = {uf[0] for uf in unsafe_fixtures.items() if not uf[1]}
 
         self.thread_unsafe = {}
         self.run_in_parallel = {}
@@ -140,7 +143,9 @@ class RunParallelPlugin:
             used_unsafe_fixtures = self.unsafe_fixtures & set(fixtures)
             return True, f"uses thread-unsafe fixture(s): {used_unsafe_fixtures}"
 
-        return identify_thread_unsafe_nodes(item.obj, self.skipped_functions)
+        return identify_thread_unsafe_nodes(
+            item.obj, self.skipped_functions, self.mark_warnings_as_unsafe,
+            self.mark_ctypes_as_unsafe)
 
     @pytest.hookimpl(trylast=True)
     def pytest_itemcollected(self, item):
@@ -318,6 +323,18 @@ def pytest_addoption(parser):
         dest="skip_thread_unsafe",
         help="Whether to skip running thread-unsafe tests",
         type=bool,
+        default=False,
+    )
+    parser.addoption(
+        "--mark-warnings-as-unsafe",
+        action="store_true",
+        dest="mark_warnings_as_unsafe",
+        default=False,
+    )
+    parser.addoption(
+        "--mark-ctypes-as-unsafe",
+        action="store_true",
+        dest="mark_ctypes_as_unsafe",
         default=False,
     )
     parser.addini(

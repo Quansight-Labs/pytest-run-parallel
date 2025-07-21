@@ -61,11 +61,17 @@ those fixtures are shared between threads.
 
 ## Features
 
-- Three global CLI flags:
+- Five global CLI flags:
     - `--parallel-threads` to run a test suite in parallel
     - `--iterations` to run multiple times in each thread
     - `--skip-thread-unsafe` to skip running tests marked as or
       detected to be thread-unsafe.
+    - `--mark-warnings-as-unsafe` and `--mark-ctypes-as-unsafe`
+       to always skip running tests that use the warnings or
+       ctypes modules, respectively. These are useful if you are
+       adding support for Python 3.14 to a library that already
+       runs tests under pytest-run-parallel on Python 3.13 or
+       older.
 
 - Three corresponding markers:
     - `pytest.mark.parallel_threads(n)` to mark a single test to run

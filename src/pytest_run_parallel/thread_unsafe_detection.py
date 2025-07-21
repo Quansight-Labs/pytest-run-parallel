@@ -22,30 +22,35 @@ WARNINGS_IS_THREADSAFE = (
 
 CTYPES_IS_THREADSAFE = sys.version_info > (3, 13)
 
-BLOCKLIST = {
-    ("pytest", "warns", WARNINGS_IS_THREADSAFE),
-    ("pytest", "deprecated_call", WARNINGS_IS_THREADSAFE),
-    ("_pytest.recwarn", "warns", WARNINGS_IS_THREADSAFE),
-    ("_pytest.recwarn", "deprecated_call", WARNINGS_IS_THREADSAFE),
-    ("warnings", "catch_warnings", WARNINGS_IS_THREADSAFE),
-    ("unittest.mock", "*", False),
-    ("mock", "*", False),
-    ("ctypes", "*", CTYPES_IS_THREADSAFE),
-}
+def construct_base_blocklist(unsafe_warnings, unsafe_ctypes):
+    safe_warnings = not unsafe_warnings and WARNINGS_IS_THREADSAFE
+    safe_ctypes = not unsafe_ctypes and CTYPES_IS_THREADSAFE
+    return {
+        ("pytest", "warns", safe_warnings),
+        ("pytest", "deprecated_call", safe_warnings),
+        ("_pytest.recwarn", "warns", safe_warnings),
+        ("_pytest.recwarn", "deprecated_call", safe_warnings),
+        ("warnings", "catch_warnings", safe_warnings),
+        ("unittest.mock", "*", False),
+        ("mock", "*", False),
+        ("ctypes", "*", safe_ctypes),
+    }
+
 
 
 THREAD_UNSAFE_FIXTURES = {
-    ("capsys", False),
-    ("monkeypatch", False),
-    ("recwarn", WARNINGS_IS_THREADSAFE),
+    "capsys": False,
+    "monkeypatch": False,
+    "recwarn": WARNINGS_IS_THREADSAFE,
 }
 
 
 class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
-    def __init__(self, fn, skip_set, level=0):
+    def __init__(self, fn, skip_set, unsafe_warnings, unsafe_ctypes, level=0):
         self.thread_unsafe = False
         self.thread_unsafe_reason = None
-        self.blocklist = {b[:2] for b in BLOCKLIST if not b[-1]} | skip_set
+        blocklist = construct_base_blocklist(unsafe_warnings, unsafe_ctypes)
+        self.blocklist = {b[:2] for b in blocklist if not b[-1]} | skip_set
         self.module_blocklist = {mod for mod, func in self.blocklist if func == "*"}
         self.function_blocklist = {
             (mod, func) for mod, func in self.blocklist if func != "*"
@@ -56,6 +61,8 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
 
         self.fn = fn
         self.skip_set = skip_set
+        self.unsafe_warnings = unsafe_warnings
+        self.unsafe_ctypes = unsafe_ctypes
         self.level = level
         self.modules_aliases = {}
         self.func_aliases = {}
@@ -129,7 +136,8 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             if child_fn is not None and callable(child_fn):
                 self.thread_unsafe, self.thread_unsafe_reason = (
                     identify_thread_unsafe_nodes(
-                        child_fn, self.skip_set, self.level + 1
+                        child_fn, self.skip_set, self.unsafe_warnings,
+                        self.unsafe_ctypes, self.level + 1
                     )
                 )
 
@@ -176,7 +184,8 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             if callable(child_fn):
                 self.thread_unsafe, self.thread_unsafe_reason = (
                     identify_thread_unsafe_nodes(
-                        child_fn, self.skip_set, self.level + 1
+                        child_fn, self.skip_set, self.unsafe_warnings,
+                        self.unsafe_ctypes, self.level + 1
                     )
                 )
 
@@ -219,7 +228,8 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
         return super().visit(node)
 
 
-def _identify_thread_unsafe_nodes(fn, skip_set, level=0):
+def _identify_thread_unsafe_nodes(fn, skip_set, unsafe_warnings, unsafe_ctypes,
+                                  level=0):
     if is_hypothesis_test(fn):
         return True, "uses hypothesis"
 
@@ -233,7 +243,8 @@ def _identify_thread_unsafe_nodes(fn, skip_set, level=0):
     except Exception:
         return False, None
 
-    visitor = ThreadUnsafeNodeVisitor(fn, skip_set, level=level)
+    visitor = ThreadUnsafeNodeVisitor(fn, skip_set, unsafe_warnings,
+                                      unsafe_ctypes, level=level)
     visitor.visit(tree)
     return visitor.thread_unsafe, visitor.thread_unsafe_reason
 
@@ -241,8 +252,11 @@ def _identify_thread_unsafe_nodes(fn, skip_set, level=0):
 cached_thread_unsafe_identify = functools.lru_cache(_identify_thread_unsafe_nodes)
 
 
-def identify_thread_unsafe_nodes(fn, skip_set, level=0):
+def identify_thread_unsafe_nodes(fn, skip_set, unsafe_warnings, unsafe_ctypes,
+                                 level=0):
     try:
-        return cached_thread_unsafe_identify(fn, skip_set, level=level)
+        return cached_thread_unsafe_identify(
+            fn, skip_set, unsafe_warnings, unsafe_ctypes, level=level)
     except TypeError:
-        return _identify_thread_unsafe_nodes(fn, skip_set, level=level)
+        return _identify_thread_unsafe_nodes(
+            fn, skip_set, unsafe_warnings, unsafe_ctypes, level=level)

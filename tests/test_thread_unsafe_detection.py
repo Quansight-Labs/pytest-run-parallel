@@ -132,6 +132,70 @@ def test_pytest_warns_detection(pytester):
             ]
         )
 
+def test_warns_detection_config_option(pytester):
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+        import warnings
+        import pytest as pyt
+        import warnings as w
+        import sys
+        from pytest import warns, deprecated_call
+        from warnings import catch_warnings
+
+        warns_alias = warns
+
+        def test_single_thread_warns_1(num_parallel_threads):
+            with pytest.warns(UserWarning):
+                warnings.warn('example', UserWarning)
+            assert num_parallel_threads == 1
+
+        def test_single_thread_warns_2(num_parallel_threads):
+            with warns(UserWarning):
+                warnings.warn('example', UserWarning)
+            assert num_parallel_threads == 1
+
+        def test_single_thread_warns_3(num_parallel_threads):
+            with pyt.warns(UserWarning):
+                warnings.warn('example', UserWarning)
+            assert num_parallel_threads == 1
+
+        def test_single_thread_warns_4(num_parallel_threads):
+            with warns_alias(UserWarning):
+                warnings.warn('example', UserWarning)
+            assert num_parallel_threads == 1
+
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("--parallel-threads=10", "-v", "--mark-warnings-as-unsafe")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_single_thread_warns_1 PASSED*",
+            "*::test_single_thread_warns_2 PASSED*",
+            "*::test_single_thread_warns_3 PASSED*",
+            "*::test_single_thread_warns_4 PASSED*",
+        ]
+    )
+
+    # check that skipping works too
+    result = pytester.runpytest(
+        "--parallel-threads=10", "--skip-thread-unsafe=True", "-v",
+        "--mark-warnings-as-unsafe"
+    )
+
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_single_thread_warns_1 SKIPPED*",
+            "*::test_single_thread_warns_2 SKIPPED*",
+            "*::test_single_thread_warns_3 SKIPPED*",
+            "*::test_single_thread_warns_4 SKIPPED*",
+        ]
+    )
+
+
 
 def test_thread_unsafe_fixtures(pytester):
     # create a temporary pytest test module
@@ -499,6 +563,23 @@ def test_thread_unsafe_ctypes(pytester):
         ]
     )
 
+def test_thread_unsafe_ctypes_config_option(pytester):
+    pytester.makepyfile("""
+    import ctypes.util
+    import sys
+
+    def test_thread_unsafe_ctypes(num_parallel_threads):
+        ctypes.util.find_library("m")
+        assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest(
+        "--parallel-threads=10", "-v", "--mark-ctypes-as-unsafe")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_thread_unsafe_ctypes PASSED*",
+        ]
+    )
 
 def test_thread_unsafe_ctypes_import_from(pytester):
     pytester.makepyfile("""
@@ -522,6 +603,28 @@ def test_thread_unsafe_ctypes_import_from(pytester):
     result.stdout.fnmatch_lines(
         [
             "*::test_thread_unsafe_ctypes *PASSED*",
+            "*::test_thread_unsafe_not_using_ctypes PARALLEL PASSED*",
+        ]
+    )
+
+
+def test_thread_unsafe_ctypes_import_from_config_option(pytester):
+    pytester.makepyfile("""
+    import sys
+    from ctypes.util import find_library
+
+    def test_thread_unsafe_ctypes(num_parallel_threads):
+        find_library("m")
+        assert num_parallel_threads == 1
+
+    def test_thread_unsafe_not_using_ctypes(num_parallel_threads):
+        assert num_parallel_threads == 10
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v", "--mark-ctypes-as-unsafe")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_thread_unsafe_ctypes PASSED*",
             "*::test_thread_unsafe_not_using_ctypes PARALLEL PASSED*",
         ]
     )

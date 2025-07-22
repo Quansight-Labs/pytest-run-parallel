@@ -663,3 +663,24 @@ Hello world'''
             f"*::test_thread_unsafe_pytest_warns_multiline_string2 {WARNINGS_PASS}PASSED*",
         ]
     )
+
+
+def test_thread_unsafe_hypothesis_config_option(pytester):
+    pytester.makepyfile("""
+    from hypothesis import given, strategies as st, settings, HealthCheck
+
+    @given(st.integers())
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+    def test_thread_unsafe_hypothesis(num_parallel_threads, n):
+        assert num_parallel_threads == 1
+        assert isinstance(n, int)
+    """)
+
+    result = pytester.runpytest(
+        "--parallel-threads=10", "-v", "--mark-hypothesis-as-unsafe"
+    )
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_thread_unsafe_hypothesis PASSED*",
+        ]
+    )

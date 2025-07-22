@@ -73,7 +73,7 @@ deps = [
     "pytest-cov",
     "pytest-order",
     "check-manifest",
-    "hypothesis",
+    "hypothesis>=6.135.33",
 ]
 commands = [
     [

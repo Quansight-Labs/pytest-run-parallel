@@ -16,6 +16,13 @@ except ImportError:
             return False
 
 
+try:
+    from hypothesis import __version_info__ as hypothesis_version
+except ImportError:
+    hypothesis_version = (0, 0, 0)
+
+HYPOTHESIS_THREADSAFE_VERSION = (6, 135, 33)
+
 WARNINGS_IS_THREADSAFE = bool(
     getattr(sys.flags, "context_aware_warnings", 0)
     and getattr(sys.flags, "thread_inherit_context", 0)
@@ -38,14 +45,6 @@ def construct_base_blocklist(unsafe_warnings, unsafe_ctypes):
         ("ctypes", "*", safe_ctypes),
     }
 
-
-try:
-    from hypothesis import __version_info__ as hypothesis_version
-except ImportError:
-    hypothesis_version = (0, 0, 0)
-
-
-HYPOTHESIS_THREADSAFE_VERSION = (6, 135, 33)
 
 THREAD_UNSAFE_FIXTURES = {
     "capsys": False,
@@ -244,15 +243,22 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
 
 
 def _identify_thread_unsafe_nodes(
-    fn, skip_set, unsafe_warnings, unsafe_ctypes, level=0
+    fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=0
 ):
-    if is_hypothesis_test(fn) and hypothesis_version < HYPOTHESIS_THREADSAFE_VERSION:
-        return (
-            True,
-            f"uses hypothesis v{'.'.join(map(str, hypothesis_version))}, which "
-            "is before the first thread-safe version "
-            f"(v{'.'.join(map(str, HYPOTHESIS_THREADSAFE_VERSION))})",
-        )
+    if is_hypothesis_test(fn):
+        if hypothesis_version < HYPOTHESIS_THREADSAFE_VERSION:
+            return (
+                True,
+                f"uses hypothesis v{'.'.join(map(str, hypothesis_version))}, which "
+                "is before the first thread-safe version "
+                f"(v{'.'.join(map(str, HYPOTHESIS_THREADSAFE_VERSION))})",
+            )
+        if unsafe_hypothesis:
+            return (
+                True,
+                "uses Hypothesis, and pytest-run-parallel was run with "
+                "--mark-hypothesis-as-unsafe",
+            )
 
     try:
         src = inspect.getsource(fn)
@@ -274,15 +280,11 @@ def _identify_thread_unsafe_nodes(
 cached_thread_unsafe_identify = functools.lru_cache(_identify_thread_unsafe_nodes)
 
 
-def identify_thread_unsafe_nodes(fn, skip_set, unsafe_warnings, unsafe_ctypes, level=0):
+def identify_thread_unsafe_nodes(*args, **kwargs):
     try:
-        return cached_thread_unsafe_identify(
-            fn, skip_set, unsafe_warnings, unsafe_ctypes, level=level
-        )
+        return cached_thread_unsafe_identify(*args, **kwargs)
     except TypeError:
-        return _identify_thread_unsafe_nodes(
-            fn, skip_set, unsafe_warnings, unsafe_ctypes, level=level
-        )
+        return _identify_thread_unsafe_nodes(*args, **kwargs)
 
 
 def construct_thread_unsafe_fixtures(config):

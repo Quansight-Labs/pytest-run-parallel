@@ -61,7 +61,7 @@ those fixtures are shared between threads.
 
 ## Features
 
-- Five global CLI flags:
+- Six global CLI flags:
     - `--parallel-threads` to run a test suite in parallel
     - `--iterations` to run multiple times in each thread
     - `--skip-thread-unsafe` to skip running tests marked as or
@@ -72,6 +72,13 @@ those fixtures are shared between threads.
        adding support for Python 3.14 to a library that already
        runs tests under pytest-run-parallel on Python 3.13 or
        older.
+    - `--mark-hypothesis-as-unsafe`, to always skip runing tests that
+      use [hypothesis](https://github.com/hypothesisworks/hypothesis).
+      While newer version of Hypothesis are thread-safe, and versions
+      which are not are automatically skipped by `pytest-run-parallel`,
+      this flag is an escape hatch in case you run into thread-safety
+      problems caused by Hypothesis.
+
 
 - Three corresponding markers:
     - `pytest.mark.parallel_threads(n)` to mark a single test to run

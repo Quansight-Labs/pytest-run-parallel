@@ -28,21 +28,11 @@ jobs:
           - 'pypy-3.8'
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
+      - uses: actions/setup-python@v5
 
       - name: Install tox
         run: |
-          uv tool install \
-            --python-preference only-managed \
-            --python 3.13 \
-            tox \
-            --with tox-uv \
-            --with tox-gh
-
-      - name: Install Python
-        # We've installed Python 3.13 above already
-        if: matrix.python-version != '3.13'
-        run: uv python install --python-preference only-managed ${{ matrix.python-version }}
+          pip install tox tox-uv tox-gh
 
       - name: Setup test suite
         run: tox run -vv --notest --skip-missing-interpreters false

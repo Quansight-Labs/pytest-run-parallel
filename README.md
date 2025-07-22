@@ -67,8 +67,8 @@ those fixtures are shared between threads.
     - `--skip-thread-unsafe` to skip running tests marked as or
       detected to be thread-unsafe.
     - `--mark-warnings-as-unsafe` and `--mark-ctypes-as-unsafe`
-       to always skip running tests that use the warnings or
-       ctypes modules, respectively. These are useful if you are
+       to always skip running tests that use the `warnings` or
+       `ctypes` modules, respectively. These are useful if you are
        adding support for Python 3.14 to a library that already
        runs tests under pytest-run-parallel on Python 3.13 or
        older.
@@ -131,18 +131,24 @@ current design with `@pytest.mark.thread_unsafe` or
 `@pytest.mark.thread_unsafe(reason="...")`.
 
 The following functions and modules are known to be thread-unsafe and
-pytest-run-parallel will automatically not run tests using them in
+pytest-run-parallel will automatically skip running tests using them in
 parallel:
+
+- The pytest `capsys` fixture
+- The pytest `monkeypath` fixture
+
+The following fixtures are known to be thread-unsafe on Python 3.13 and older,
+or on 3.14 and newer if Python isn't configured correctly:
 
 - `pytest.warns`
 - `pytest.deprecated_call`
-- The pytest `capsys` fixture
-- The pytest `monkeypath` fixture
 - The pytest `recwarn` fixture
 - `warnings.catch_warnings`
 - `unittest.mock`
 - `ctypes`
-- Any test using [hypothesis](https://hypothesis.readthedocs.io/en/latest/).
+
+If an older version of `hypothesis` that is known to be thread-unsafe is
+installed, tests using `hypothesis` are skipped.
 
 Additionally, if a set of fixtures is known to be thread unsafe, tests
 that use them can be automatically marked as thread unsafe by declaring
@@ -243,6 +249,20 @@ Both modes of operations are supported simultaneously, i.e.,
 $ pytest -x -v --parallel-threads=5 test_file.py
 ```
 
+You can skip tests marked as or detected to be thread-unsafe by passing
+`--skip-thread-unsafe` in your pytest invocation. This is useful when running
+pytest-run-parallel under [Thread
+Sanitizer](https://clang.llvm.org/docs/ThreadSanitizer.html). Setting
+`--skip-thread-unsafe=True` will avoid unnecessarily running tests where thread
+sanitizer cannot detect races because the test is not parallelized.
+
+Older versions of pytest-run-parallel always marked tests using the `warnings`
+and `ctypes` modules as thread-unsafe, since both were not thread-safe until
+Python 3.14. If you are adding support for Python 3.14 and would like to
+continue marking tests that use `warnings` or `ctypes`, pass
+`--mark-warnings-as-unsafe` or `--mark-ctypes-as-unsafe`, respectively, in your
+`pytest` invocation.
+
 Additionally, `pytest-run-parallel` exposes the `num_parallel_threads`
 and `num_iterations` fixtures which enable a test to be aware of the
 number of threads that are being spawned and the number of iterations
@@ -257,13 +277,6 @@ def test_skip_if_parallel(num_parallel_threads):
         pytest.skip(reason='does not work in parallel')
     ...
 ```
-
-You can skip tests marked as or detected to be thread-unsafe by passing
-`--skip-thread-unsafe` in your pytest invocation. This is useful when running
-pytest-run-parallel under [Thread
-Sanitizer](https://clang.llvm.org/docs/ThreadSanitizer.html). Setting
-`--skip-thread-unsafe=True` will avoid unnecessarily running tests where thread
-sanitizer cannot detect races because the test is not parallelized.
 
 Finally, the `thread_comp` fixture allows for parallel test debugging,
 by providing an instance of `ThreadComparator`, whose `__call__` method

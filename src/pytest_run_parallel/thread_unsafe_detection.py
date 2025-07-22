@@ -15,7 +15,7 @@ except ImportError:
         def is_hypothesis_test(fn):
             return False
 
-WARNINGS_IS_THREADSAFE = (
+WARNINGS_IS_THREADSAFE = bool(
     getattr(sys.flags, "context_aware_warnings", 0) and
     getattr(sys.flags, "thread_inherit_context", 0)
 )
@@ -260,3 +260,14 @@ def identify_thread_unsafe_nodes(fn, skip_set, unsafe_warnings, unsafe_ctypes,
     except TypeError:
         return _identify_thread_unsafe_nodes(
             fn, skip_set, unsafe_warnings, unsafe_ctypes, level=level)
+
+
+def construct_thread_unsafe_fixtures(config):
+    unsafe_fixtures = THREAD_UNSAFE_FIXTURES.copy()
+    for item in config.getini("thread_unsafe_fixtures"):
+        unsafe_fixtures[item] = False
+
+    if config.option.mark_warnings_as_unsafe:
+        unsafe_fixtures['recwarn'] = False
+
+    return {uf[0] for uf in unsafe_fixtures.items() if not uf[1]}

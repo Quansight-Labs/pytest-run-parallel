@@ -10,8 +10,8 @@ import pytest
 
 from pytest_run_parallel.thread_comparator import ThreadComparator
 from pytest_run_parallel.thread_unsafe_detection import (
-    THREAD_UNSAFE_FIXTURES,
     identify_thread_unsafe_nodes,
+    construct_thread_unsafe_fixtures
 )
 from pytest_run_parallel.utils import (
     get_configured_num_workers,
@@ -102,15 +102,7 @@ class RunParallelPlugin:
             (".".join(x[:-1]), x[-1]) for x in skipped_functions
         )
 
-        unsafe_fixtures = THREAD_UNSAFE_FIXTURES.copy()
-        for item in config.getini("thread_unsafe_fixtures"):
-            unsafe_fixtures[item] = False
-
-        if self.mark_warnings_as_unsafe:
-            unsafe_fixtures['recwarn'] = False
-
-        self.unsafe_fixtures = {uf[0] for uf in unsafe_fixtures.items() if not uf[1]}
-
+        self.unsafe_fixtures = construct_thread_unsafe_fixtures(config)
         self.thread_unsafe = {}
         self.run_in_parallel = {}
 

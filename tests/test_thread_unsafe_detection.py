@@ -10,6 +10,13 @@ except ImportError:
     hypothesis = None
 
 
+WARNINGS_IS_THREADSAFE = bool(
+    getattr(sys.flags, "context_aware_warnings", 0) and
+    getattr(sys.flags, "thread_inherit_context", 0)
+)
+WARNINGS_PASS = "PARALLEL " if WARNINGS_IS_THREADSAFE else ""
+CTYPES_PASS = "PARALLEL " if sys.version_info > (3, 13) else ""
+
 def test_thread_unsafe_marker(pytester):
     # create a temporary pytest test module
     pytester.makepyfile("""
@@ -108,10 +115,10 @@ def test_pytest_warns_detection(pytester):
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_single_thread_warns_1 *PASSED*",
-            "*::test_single_thread_warns_2 *PASSED*",
-            "*::test_single_thread_warns_3 *PASSED*",
-            "*::test_single_thread_warns_4 *PASSED*",
+            f"*::test_single_thread_warns_1 {WARNINGS_PASS}PASSED*",
+            f"*::test_single_thread_warns_2 {WARNINGS_PASS}PASSED*",
+            f"*::test_single_thread_warns_3 {WARNINGS_PASS}PASSED*",
+            f"*::test_single_thread_warns_4 {WARNINGS_PASS}PASSED*",
         ]
     )
 
@@ -249,7 +256,7 @@ def test_thread_unsafe_fixtures(pytester):
     result.stdout.fnmatch_lines(
         [
             "*::test_capsys PASSED *thread-unsafe*: uses thread-unsafe fixture*",
-            "*::test_recwarn *PASSED*",
+            f"*::test_recwarn {WARNINGS_PASS}PASSED*",
             "*::test_custom_fixture_skip PASSED *thread-unsafe*: uses thread-unsafe fixture*",
             "*::test_custom_fixture_skip_2 PASSED *thread-unsafe*: uses thread-unsafe fixture*",
         ]
@@ -451,7 +458,7 @@ def test_chained_attribute_import(pytester):
     result = pytester.runpytest("--parallel-threads=10", "-v")
     result.stdout.fnmatch_lines(
         [
-            "*::test_chained_attribute_thread_unsafe_detection *PASSED*",
+            f"*::test_chained_attribute_thread_unsafe_detection {WARNINGS_PASS}PASSED*",
         ]
     )
 
@@ -559,7 +566,7 @@ def test_thread_unsafe_ctypes(pytester):
     result = pytester.runpytest("--parallel-threads=10", "-v")
     result.stdout.fnmatch_lines(
         [
-            "*::test_thread_unsafe_ctypes *PASSED*",
+            f"*::test_thread_unsafe_ctypes {CTYPES_PASS}PASSED*",
         ]
     )
 
@@ -602,7 +609,7 @@ def test_thread_unsafe_ctypes_import_from(pytester):
     result = pytester.runpytest("--parallel-threads=10", "-v")
     result.stdout.fnmatch_lines(
         [
-            "*::test_thread_unsafe_ctypes *PASSED*",
+            f"*::test_thread_unsafe_ctypes {CTYPES_PASS}PASSED*",
             "*::test_thread_unsafe_not_using_ctypes PARALLEL PASSED*",
         ]
     )
@@ -666,7 +673,7 @@ Hello world'''
     result = pytester.runpytest("--parallel-threads=10", "-v")
     result.stdout.fnmatch_lines(
         [
-            "*::test_thread_unsafe_pytest_warns_multiline_string1 *PASSED*",
-            "*::test_thread_unsafe_pytest_warns_multiline_string2 *PASSED*",
+            f"*::test_thread_unsafe_pytest_warns_multiline_string1 {WARNINGS_PASS}PASSED*",
+            f"*::test_thread_unsafe_pytest_warns_multiline_string2 {WARNINGS_PASS}PASSED*",
         ]
     )

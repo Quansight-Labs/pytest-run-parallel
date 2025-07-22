@@ -2,6 +2,13 @@ import os
 import sys
 import textwrap
 
+import pytest
+
+try:
+    import hypothesis
+except ImportError:
+    hypothesis = None
+
 
 WARNINGS_IS_THREADSAFE = bool(
     getattr(sys.flags, "context_aware_warnings", 0)
@@ -665,6 +672,7 @@ Hello world'''
     )
 
 
+@pytest.mark.skipif(hypothesis is None, reason="hypothesis needs to be installed")
 def test_thread_unsafe_hypothesis_config_option(pytester):
     pytester.makepyfile("""
     from hypothesis import given, strategies as st, settings, HealthCheck

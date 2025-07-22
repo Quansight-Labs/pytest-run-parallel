@@ -15,7 +15,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.13t', 'pypy-3.8']
+        python-version:
+          - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
+          - '3.13t'
+          - '3.14-dev'
+          - '3.14t-dev'
+          - 'pypy-3.8'
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3

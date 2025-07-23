@@ -54,7 +54,9 @@ THREAD_UNSAFE_FIXTURES = {
 
 
 class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
-    def __init__(self, fn, skip_set, unsafe_warnings, unsafe_ctypes, level=0):
+    def __init__(
+        self, fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=0
+    ):
         self.thread_unsafe = False
         self.thread_unsafe_reason = None
         blocklist = construct_base_blocklist(unsafe_warnings, unsafe_ctypes)
@@ -71,6 +73,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
         self.skip_set = skip_set
         self.unsafe_warnings = unsafe_warnings
         self.unsafe_ctypes = unsafe_ctypes
+        self.unsafe_hypothesis = unsafe_hypothesis
         self.level = level
         self.modules_aliases = {}
         self.func_aliases = {}
@@ -148,6 +151,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                         self.skip_set,
                         self.unsafe_warnings,
                         self.unsafe_ctypes,
+                        self.unsafe_hypothesis,
                         self.level + 1,
                     )
                 )
@@ -199,6 +203,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                         self.skip_set,
                         self.unsafe_warnings,
                         self.unsafe_ctypes,
+                        self.unsafe_hypothesis,
                         self.level + 1,
                     )
                 )
@@ -271,7 +276,7 @@ def _identify_thread_unsafe_nodes(
         return False, None
 
     visitor = ThreadUnsafeNodeVisitor(
-        fn, skip_set, unsafe_warnings, unsafe_ctypes, level=level
+        fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=level
     )
     visitor.visit(tree)
     return visitor.thread_unsafe, visitor.thread_unsafe_reason

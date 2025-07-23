@@ -21,7 +21,7 @@ try:
 except ImportError:
     hypothesis_version = (0, 0, 0)
 
-HYPOTHESIS_THREADSAFE_VERSION = (6, 135, 33)
+HYPOTHESIS_THREADSAFE_VERSION = (6, 136, 3)
 
 WARNINGS_IS_THREADSAFE = bool(
     getattr(sys.flags, "context_aware_warnings", 0)

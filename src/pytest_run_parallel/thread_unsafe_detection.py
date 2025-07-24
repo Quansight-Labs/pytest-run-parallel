@@ -82,6 +82,8 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             if inspect.ismodule(value) and value.__name__ in modules:
                 self.modules_aliases[var_name] = value.__name__
             elif inspect.isfunction(value):
+                if value.__module__ is None:
+                    continue
                 if value.__module__ in modules:
                     self.func_aliases[var_name] = (value.__module__, value.__name__)
                     continue

@@ -692,3 +692,24 @@ def test_thread_unsafe_hypothesis_config_option(pytester):
             "*::test_thread_unsafe_hypothesis PASSED*",
         ]
     )
+
+
+def test_thread_unsafe_detection_can_handle_none_module(pytester):
+    pytester.makepyfile(
+        """
+    global_lambda = eval("lambda x: x + 1", {})
+
+    def test_has_l_in_globals(num_parallel_threads):
+        assert num_parallel_threads == 10
+
+    assert global_lambda.__module__ is None
+    assert "global_lambda" in test_has_l_in_globals.__globals__
+    """
+    )
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_has_l_in_globals PARALLEL PASSED*",
+        ]
+    )

@@ -19,6 +19,14 @@ from pytest_run_parallel.utils import (
     get_num_workers,
 )
 
+GIL_ENABLED_ERROR_TEXT = (
+    "GIL was dynamically re-enabled during test execution. "
+    "When running under a Python free-threaded build with GIL initially disabled, "
+    "the test suite must not cause the GIL to be re-enabled at runtime. Check "
+    "for compiled extension modules that do not use the Py_mod_gil slot or the "
+    "PyUnstable_Module_SetGIL API."
+)
+
 
 def wrap_function_parallel(fn, n_workers, n_iterations):
     @functools.wraps(fn)
@@ -95,6 +103,7 @@ class RunParallelPlugin:
         self.mark_warnings_as_unsafe = config.option.mark_warnings_as_unsafe
         self.mark_ctypes_as_unsafe = config.option.mark_ctypes_as_unsafe
         self.mark_hypothesis_as_unsafe = config.option.mark_hypothesis_as_unsafe
+        self.warn_gil_enabled = config.option.warn_gil_enabled
 
         skipped_functions = [
             x.split(".") for x in config.getini("thread_unsafe_functions")
@@ -106,6 +115,8 @@ class RunParallelPlugin:
         self.unsafe_fixtures = construct_thread_unsafe_fixtures(config)
         self.thread_unsafe = {}
         self.run_in_parallel = {}
+
+        self.initially_gil_disabled = None
 
     def skipped_or_not_parallel(self, *, plural):
         if plural:
@@ -143,6 +154,21 @@ class RunParallelPlugin:
             self.mark_ctypes_as_unsafe,
             self.mark_hypothesis_as_unsafe,
         )
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_sessionstart(self, session):
+        if hasattr(sys, "_is_gil_enabled"):
+            self.initially_gil_disabled = not sys._is_gil_enabled()
+        else:
+            self.initially_gil_disabled = False
+
+    @pytest.hookimpl(trylast=True)
+    def pytest_sessionfinish(self, session, exitstatus):
+        if self.initially_gil_disabled and sys._is_gil_enabled():
+            if self.warn_gil_enabled:
+                warnings.warn(GIL_ENABLED_ERROR_TEXT)
+            else:
+                pytest.exit(GIL_ENABLED_ERROR_TEXT, returncode=1)
 
     @pytest.hookimpl(trylast=True)
     def pytest_itemcollected(self, item):
@@ -338,6 +364,12 @@ def pytest_addoption(parser):
         "--mark-hypothesis-as-unsafe",
         action="store_true",
         dest="mark_hypothesis_as_unsafe",
+        default=False,
+    )
+    parser.addoption(
+        "--warn-gil-enabled",
+        action="store_true",
+        dest="warn_gil_enabled",
         default=False,
     )
     parser.addini(

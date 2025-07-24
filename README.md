@@ -77,7 +77,8 @@ those fixtures are shared between threads.
       While newer version of Hypothesis are thread-safe, and versions
       which are not are automatically skipped by `pytest-run-parallel`,
       this flag is an escape hatch in case you run into thread-safety
-      problems caused by Hypothesis.
+      problems caused by Hypothesis, or in tests that happen to use
+      hypothesis and were skipped in older versions of pytest-run-parallel.
 
 
 - Three corresponding markers:

@@ -367,24 +367,6 @@ def test_thread_unsafe_function_attr(pytester):
     )
 
 
-@pytest.mark.skipif(hypothesis is None, reason="hypothesis needs to be installed")
-def test_detect_hypothesis(pytester):
-    pytester.makepyfile("""
-    from hypothesis import given, strategies as st, settings, HealthCheck
-
-    @given(a=st.none())
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
-    def test_uses_hypothesis(a, num_parallel_threads):
-        assert num_parallel_threads == 1
-    """)
-    result = pytester.runpytest("--parallel-threads=10", "-v")
-    result.stdout.fnmatch_lines(
-        [
-            "*::test_uses_hypothesis PASSED*",
-        ]
-    )
-
-
 def test_detect_unittest_mock(pytester):
     pytester.makepyfile("""
     import sys
@@ -686,5 +668,27 @@ Hello world'''
         [
             f"*::test_thread_unsafe_pytest_warns_multiline_string1 {WARNINGS_PASS}PASSED*",
             f"*::test_thread_unsafe_pytest_warns_multiline_string2 {WARNINGS_PASS}PASSED*",
+        ]
+    )
+
+
+@pytest.mark.skipif(hypothesis is None, reason="hypothesis needs to be installed")
+def test_thread_unsafe_hypothesis_config_option(pytester):
+    pytester.makepyfile("""
+    from hypothesis import given, strategies as st, settings, HealthCheck
+
+    @given(st.integers())
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+    def test_thread_unsafe_hypothesis(num_parallel_threads, n):
+        assert num_parallel_threads == 1
+        assert isinstance(n, int)
+    """)
+
+    result = pytester.runpytest(
+        "--parallel-threads=10", "-v", "--mark-hypothesis-as-unsafe"
+    )
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_thread_unsafe_hypothesis PASSED*",
         ]
     )

@@ -94,6 +94,7 @@ class RunParallelPlugin:
         self.skip_thread_unsafe = config.option.skip_thread_unsafe
         self.mark_warnings_as_unsafe = config.option.mark_warnings_as_unsafe
         self.mark_ctypes_as_unsafe = config.option.mark_ctypes_as_unsafe
+        self.mark_hypothesis_as_unsafe = config.option.mark_hypothesis_as_unsafe
 
         skipped_functions = [
             x.split(".") for x in config.getini("thread_unsafe_functions")
@@ -140,6 +141,7 @@ class RunParallelPlugin:
             self.skipped_functions,
             self.mark_warnings_as_unsafe,
             self.mark_ctypes_as_unsafe,
+            self.mark_hypothesis_as_unsafe,
         )
 
     @pytest.hookimpl(trylast=True)
@@ -330,6 +332,12 @@ def pytest_addoption(parser):
         "--mark-ctypes-as-unsafe",
         action="store_true",
         dest="mark_ctypes_as_unsafe",
+        default=False,
+    )
+    parser.addoption(
+        "--mark-hypothesis-as-unsafe",
+        action="store_true",
+        dest="mark_hypothesis_as_unsafe",
         default=False,
     )
     parser.addini(

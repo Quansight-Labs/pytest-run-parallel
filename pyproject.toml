@@ -9,7 +9,7 @@ name = "pytest-run-parallel"
 description = "A simple pytest plugin to run tests concurrently"
 version = "0.5.1-dev"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "pytest>=6.2.0",
 ]
@@ -28,7 +28,6 @@ classifiers = [
     "Topic :: Software Development :: Testing",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -66,7 +65,7 @@ exclude = ["docs/conf.py"]
 select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.tox]
-env_list = ["py38", "py39", "py310", "py311", "py312", "py313", "py313t", "psutil", "pypy3", "ruff"]
+env_list = ["py39", "py310", "py311", "py312", "py313", "py313t", "psutil", "pypy3", "ruff"]
 
 [tool.tox.env_run_base]
 deps = [
@@ -74,7 +73,7 @@ deps = [
     "pytest-cov",
     "pytest-order",
     "check-manifest",
-    "hypothesis",
+    "hypothesis>=6.135.33",
 ]
 commands = [
     [
@@ -104,11 +103,10 @@ extras = ["psutil"]
 
 
 [tool.tox.gh.python]
-"3.8" = ["py38"]
 "3.9" = ["py39"]
 "3.10" = ["py310"]
 "3.11" = ["py311"]
 "3.12" = ["py312"]
 "3.13" = ["py313", "psutil"]
 "3.13t" = ["py313t"]
-"pypy-3.8" = ["pypy3"]
+"pypy-3.9" = ["pypy3"]

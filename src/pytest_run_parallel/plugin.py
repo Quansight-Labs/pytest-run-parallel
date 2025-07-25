@@ -121,13 +121,6 @@ class RunParallelPlugin:
         self.thread_unsafe = {}
         self.run_in_parallel = {}
 
-        self.gil_initially_disabled = not self._is_gil_enabled()
-
-    def _is_gil_enabled(self):
-        if hasattr(sys, "_is_gil_enabled"):
-            return sys._is_gil_enabled()
-        return True
-
     def skipped_or_not_parallel(self, *, plural):
         if plural:
             skipped = "were skipped"

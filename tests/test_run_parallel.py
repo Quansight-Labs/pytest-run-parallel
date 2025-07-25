@@ -642,3 +642,59 @@ def test_runs_hypothesis_in_parallel(pytester):
             "*::test_uses_hypothesis PARALLEL PASSED*",
         ]
     )
+
+
+def test_fail_warning_gil_enabled_during_execution(pytester):
+    test_name = "test_fail_warning_gil_enabled_during_execution"
+    pytester.makepyfile(f"""
+    import warnings
+
+    def {test_name}():
+        warnings.warn(
+            "The global interpreter lock (GIL) has been enabled to load module 'module'",
+            RuntimeWarning
+        )
+    """)
+    result = pytester.runpytest("-v")
+    assert result.ret == 1
+    result.stdout.fnmatch_lines(
+        [
+            f"*GIL was dynamically re-enabled during test execution of '{test_name}.py::{test_name}' to load module 'module'*"
+        ]
+    )
+
+
+def test_fail_warning_gil_enabled_during_collection(pytester):
+    test_name = "test_fail_warning_gil_enabled_during_collection"
+    pytester.makepyfile(f"""
+    import warnings
+    warnings.warn(
+        "The global interpreter lock (GIL) has been enabled to load module 'module'",
+        RuntimeWarning
+    )
+
+    def {test_name}():
+        assert True
+    """)
+    result = pytester.runpytest("-v")
+    assert result.ret == 1
+    result.stdout.fnmatch_lines(
+        [
+            "*GIL was dynamically re-enabled during test collection to load module 'module'*"
+        ]
+    )
+
+
+def test_warning_gil_enabled_ignore_option(pytester):
+    pytester.makepyfile("""
+    import warnings
+    warnings.warn(
+        "The global interpreter lock (GIL) has been enabled to load module 'module'",
+        RuntimeWarning
+    )
+
+    def test_warning_gil_enabled_ignore_option():
+        assert True
+    """)
+    result = pytester.runpytest("-v", "--ignore-gil-enabled")
+    assert result.ret == 0

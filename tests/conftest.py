@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import sysconfig
 from pathlib import Path
 
 import pytest
@@ -8,11 +9,13 @@ import pytest
 pytest_plugins = "pytester"
 
 TESTPKG_DIR = Path(__file__).parent / "testpkg"
+IS_FREE_THREADED_BUILD = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 
 
 @pytest.fixture(scope="session", autouse=True)
 def build_gil_test_extension():
-    """Build the gil_test extension module for testing."""
+    if not IS_FREE_THREADED_BUILD:
+        return (yield)
 
     env = os.environ.copy()
     kwargs = dict(cwd=TESTPKG_DIR, env=env, capture_output=True, text=True)

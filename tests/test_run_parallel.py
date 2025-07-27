@@ -1,4 +1,5 @@
 import os
+import sysconfig
 
 import pytest
 
@@ -6,6 +7,8 @@ try:
     import hypothesis
 except ImportError:
     hypothesis = None
+
+IS_FREE_THREADED_BUILD = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 
 
 def test_default_threads(pytester):
@@ -644,69 +647,85 @@ def test_runs_hypothesis_in_parallel(pytester):
     )
 
 
-def test_fail_warning_gil_enabled_during_execution(pytester_with_gil_enabled_module):
+@pytest.mark.skipif(
+    not IS_FREE_THREADED_BUILD, reason="only tested on free-threaded build"
+)
+def test_fail_warning_gil_enabled_during_execution(pytester_subprocess):
     test_name = "test_fail_warning_gil_enabled_during_execution"
-    pytester_with_gil_enabled_module.makepyfile(f"""
+    pytester_subprocess.makepyfile(f"""
     def {test_name}():
-        import gil_enable
+        import gil_test.gil_enable
     """)
-    result = pytester_with_gil_enabled_module.runpytest("-v")
+    result = pytester_subprocess.runpytest("-v")
     assert result.ret == 1
     result.stdout.fnmatch_lines(
         [
-            f"*GIL was dynamically re-enabled during test execution of '{test_name}.py::{test_name}' to load module 'gil_enable'*"
+            f"*GIL was dynamically re-enabled during test execution of '{test_name}.py::{test_name}' "
+            "to load module 'gil_test.gil_enable'*"
         ]
     )
 
 
-def test_fail_warning_gil_enabled_during_collection(pytester_with_gil_enabled_module):
+@pytest.mark.skipif(
+    not IS_FREE_THREADED_BUILD, reason="only tested on free-threaded build"
+)
+def test_fail_warning_gil_enabled_during_collection(pytester_subprocess):
     test_name = "test_fail_warning_gil_enabled_during_collection"
-    pytester_with_gil_enabled_module.makepyfile(f"""
-    import gil_enable
+    pytester_subprocess.makepyfile(f"""
+    import gil_test.gil_enable
 
     def {test_name}():
         assert True
     """)
-    result = pytester_with_gil_enabled_module.runpytest("-v")
+    result = pytester_subprocess.runpytest("-v")
     assert result.ret == 1
     result.stdout.fnmatch_lines(
         [
-            "*GIL was dynamically re-enabled during test collection to load module 'gil_enable'*"
+            "*GIL was dynamically re-enabled during test collection to load module 'gil_test.gil_enable'*"
         ]
     )
 
 
-def test_warning_gil_enabled_ignore_option(pytester_with_gil_enabled_module):
-    pytester_with_gil_enabled_module.makepyfile("""
-    import gil_enable
+@pytest.mark.skipif(
+    not IS_FREE_THREADED_BUILD, reason="only tested on free-threaded build"
+)
+def test_warning_gil_enabled_ignore_option(pytester_subprocess):
+    pytester_subprocess.makepyfile("""
+    import gil_test.gil_enable
 
     def test_warning_gil_enabled_ignore_option():
         assert True
     """)
-    result = pytester_with_gil_enabled_module.runpytest("-v", "--ignore-gil-enabled")
+    result = pytester_subprocess.runpytest("-v", "--ignore-gil-enabled")
     assert result.ret == 0
 
 
-def test_gil_disabled_module_during_execution(pytester_with_gil_disabled_module):
+@pytest.mark.skipif(
+    not IS_FREE_THREADED_BUILD, reason="only tested on free-threaded build"
+)
+def test_gil_disabled_module_during_execution(pytester_subprocess):
     test_name = "test_gil_disabled_module_during_execution"
-    pytester_with_gil_disabled_module.makepyfile(f"""
+    pytester_subprocess.makepyfile(f"""
     def {test_name}():
-        import gil_disable
+        import gil_test.gil_disable
         assert True
     """)
-    result = pytester_with_gil_disabled_module.runpytest("-v")
+    result = pytester_subprocess.runpytest("-v")
     assert result.ret == 0
     result.stdout.fnmatch_lines([f"*{test_name}.py::{test_name} PASSED*"])
 
 
-def test_gil_disabled_module_during_collection(pytester_with_gil_disabled_module):
+@pytest.mark.skipif(
+    not IS_FREE_THREADED_BUILD, reason="only tested on free-threaded build"
+)
+def test_gil_disabled_module_during_collection(pytester_subprocess):
     test_name = "test_gil_disabled_module_during_collection"
-    pytester_with_gil_disabled_module.makepyfile(f"""
-    import gil_disable
+    pytester_subprocess.makepyfile(f"""
+    import gil_test.gil_disable
 
     def {test_name}():
         assert True
     """)
-    result = pytester_with_gil_disabled_module.runpytest("-v")
+    result = pytester_subprocess.runpytest("-v")
     assert result.ret == 0
     result.stdout.fnmatch_lines([f"*{test_name}.py::{test_name} PASSED*"])

@@ -1,10 +1,6 @@
-import functools
-import glob
 import os
-import shutil
 import subprocess
 import sys
-import sysconfig
 from pathlib import Path
 
 import pytest
@@ -14,58 +10,43 @@ pytest_plugins = "pytester"
 TESTPKG_DIR = Path(__file__).parent / "testpkg"
 
 
-def call_once(func):
-    func._called_with_args = set()
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        if (args, kwargs) in func._called_with_args:
-            return
-        func._called_with_args.add((args, kwargs))
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
-@call_once
-def build_gil_test_extension(gil_enable):
+@pytest.fixture(scope="session", autouse=True)
+def build_gil_test_extension():
     """Build the gil_test extension module for testing."""
 
     env = os.environ.copy()
-    cmd = [sys.executable, "setup.py", "build_ext", "-i"]
-    if gil_enable:
-        cmd.append("--enable-gil")
+    kwargs = dict(cwd=TESTPKG_DIR, env=env, capture_output=True, text=True)
 
+    use_uv = False
     result = subprocess.run(
-        cmd, cwd=TESTPKG_DIR, env=env, capture_output=True, text=True
+        [sys.executable, "-m", "pip", "install", "."],
+        **kwargs,
     )
+
+    # If pip is not installed, try uv
+    if result.returncode != 0 and "No module named pip" in result.stderr:
+        use_uv = True
+        result = subprocess.run(
+            ["uv", "pip", "install", "."],
+            **kwargs,
+        )
 
     if result.returncode != 0:
         raise RuntimeError(f"Failed to build extension: {result.stderr}")
 
+    yield
 
-def pytester_with_module(pytester: pytest.Pytester, *, enable_gil):
-    if not bool(sysconfig.get_config_var("Py_GIL_DISABLED")):
-        pytest.skip(
-            "gil enabling functionality only needs to be tested on the free-threaded build"
-        )
+    if use_uv:
+        cmd = ["uv", "pip", "uninstall", "gil_test"]
+    else:
+        cmd = [sys.executable, "-m", "pip", "uninstall", "gil_test"]
+    subprocess.run(cmd, **kwargs)
 
-    path = f"{TESTPKG_DIR!s}/{'gil_enable' if enable_gil else 'gil_disable'}*.so"
-    for file in glob.glob(path):
-        shutil.copy(file, pytester.path)
 
+@pytest.fixture
+def pytester_subprocess(pytester: pytest.Pytester):
     # Needed cause otherwise the GIL will only be enabled once
     old_method = pytester._method
     pytester._method = "subprocess"
     yield pytester
     pytester._method = old_method
-
-
-@pytest.fixture()
-def pytester_with_gil_enabled_module(pytester):
-    yield from pytester_with_module(pytester, enable_gil=True)
-
-
-@pytest.fixture()
-def pytester_with_gil_disabled_module(pytester):
-    yield from pytester_with_module(pytester, enable_gil=False)

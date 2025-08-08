@@ -250,12 +250,9 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
 
 
 def _is_source_indented(src):
-    # Find first line in test that has non-whitespace characters. If test is completely blank, replace
-    # with "pass" and treat it as non-indented.
+    # Find first nonblank line. If one can't be found, use placeholder.
     non_blank_lines = (line for line in src.split("\n") if line.strip() != "")
     first_non_blank_line = next(non_blank_lines, "pass")
-    # Is the first character of the first non-blank line a whitespace character? If so, the test is
-    # indented.
     is_indented = first_non_blank_line[0].isspace()
     return is_indented
 

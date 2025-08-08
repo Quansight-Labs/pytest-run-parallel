@@ -283,11 +283,11 @@ def _identify_thread_unsafe_nodes(
     except Exception:
         return False, None
 
+    if _is_source_indented(src):
+        # This test was extracted from a class or indented area, and Python needs
+        # to be told to expect indentation.
+        src = "if True:\n" + src
     try:
-        if _is_source_indented(src):
-            # This test was extracted from a class or indented area, and Python needs
-            # to be told to expect indentation.
-            src = "if True:\n" + src
         tree = ast.parse(src)
     except Exception:
         return False, None

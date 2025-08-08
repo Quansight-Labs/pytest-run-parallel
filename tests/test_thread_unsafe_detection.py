@@ -690,7 +690,7 @@ def identity(func):
 
 
 class TestThreadUnsafePytestWarnsInstanceDecorator:
-    # @identity
+    @identity
     def test_thread_unsafe_pytest_warns_instance_decorator(self, num_parallel_threads):
         with pytest.warns(UserWarning) as r:
             warnings.warn("foo", UserWarning)
@@ -698,7 +698,7 @@ class TestThreadUnsafePytestWarnsInstanceDecorator:
             assert num_parallel_threads == 10
         else:
             assert num_parallel_threads == 1
-    # @identity
+    @identity
     def test_thread_unsafe_pytest_warns_instance_decorator_with_multiline(self, num_parallel_threads):
         with pytest.warns(UserWarning) as r:
             warnings.warn("foo", UserWarning)

@@ -249,6 +249,17 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
         return super().visit(node)
 
 
+def _is_source_indented(src):
+    # Find first line in test that has non-whitespace characters
+    first_non_blank_line = next((line for line in src.split('\n') if line.rstrip() != ""), "")
+    # Assuming that the test has non-blank lines, and that the first non-blank line has a first
+    # character, is that character a whitespace character? If so the function is indented.
+    is_indented = False
+    if len(first_non_blank_line) > 0:
+        is_indented = first_non_blank_line[0].isspace()
+    return is_indented
+
+
 def _identify_thread_unsafe_nodes(
     fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=0
 ):
@@ -273,7 +284,11 @@ def _identify_thread_unsafe_nodes(
         return False, None
 
     try:
-        tree = ast.parse(src.lstrip())
+        if _is_source_indented(src):
+            # This test was extracted from a class or indented area, and Python needs
+            # to be told to expect indentation.
+            src = "if True:\n" + src
+        tree = ast.parse(src)
     except Exception:
         return False, None
 

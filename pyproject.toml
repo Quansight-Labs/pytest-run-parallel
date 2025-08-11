@@ -79,9 +79,8 @@ commands = [
     [
     "pytest",
     "-v",
-    "--cov-report", "lcov",
-    "--cov", "src/pytest_run_parallel",
-    "--cov", "tests",
+    "--cov-report", "term",
+    "--cov=pytest_run_parallel", "--cov=tests",
     "{posargs:tests}"
     ],
     [

@@ -672,6 +672,53 @@ Hello world'''
     )
 
 
+def test_thread_unsafe_pytest_warns_instance_decorator(pytester):
+    pytester.makepyfile("""
+import sys
+import warnings
+
+import pytest
+
+WARNINGS_IS_THREADSAFE = (
+    getattr(sys.flags, "context_aware_warnings", 0) and
+    getattr(sys.flags, "thread_inherit_context", 0))
+
+
+def identity(func):
+    # Decorator that does nothing
+    return func
+
+
+class TestThreadUnsafePytestWarnsInstanceDecorator:
+    @identity
+    def test_thread_unsafe_pytest_warns_instance_decorator(self, num_parallel_threads):
+        with pytest.warns(UserWarning) as r:
+            warnings.warn("foo", UserWarning)
+        if WARNINGS_IS_THREADSAFE:
+            assert num_parallel_threads == 10
+        else:
+            assert num_parallel_threads == 1
+    @identity
+    def test_thread_unsafe_pytest_warns_instance_decorator_with_multiline(self, num_parallel_threads):
+        with pytest.warns(UserWarning) as r:
+            warnings.warn("foo", UserWarning)
+        '''foo
+'''
+        if WARNINGS_IS_THREADSAFE:
+            assert num_parallel_threads == 10
+        else:
+            assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            f"*::test_thread_unsafe_pytest_warns_instance_decorator {WARNINGS_PASS}PASSED*",
+            f"*::test_thread_unsafe_pytest_warns_instance_decorator_with_multiline {WARNINGS_PASS}PASSED*",
+        ]
+    )
+
+
 @pytest.mark.skipif(hypothesis is None, reason="hypothesis needs to be installed")
 def test_thread_unsafe_hypothesis_config_option(pytester):
     pytester.makepyfile("""

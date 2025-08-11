@@ -77,12 +77,18 @@ deps = [
 ]
 commands = [
     [
+    "coverage",
+    "run",
+    "--source=pytest_run_parallel,tests",
+    "-m",
     "pytest",
     "-v",
-    "--cov-report", "lcov",
-    "--cov", "src/pytest_run_parallel",
-    "--cov", "tests",
     "{posargs:tests}"
+    ],
+    [
+    "coverage",
+    "report",
+    "-m"
     ],
     [
     "check-manifest",

@@ -9,3 +9,11 @@ To release a new version of `pytest-run-parallel`:
 6. Open PR with the version change
 7. Monitor [conda-forge feedstock](https://github.com/conda-forge/pytest-run-parallel-feedstock)
    for anything that might be off in the auto-generated (and automerged) PR.
+
+For major releases consider the following manual testing steps before releasing
+1. Run test collection for the following projects which use pytest-run-parallel in CI
+   * SciPy
+   * CFFI
+   * pyyaml-ft
+
+The full tests are not necessary to run as most issues happen during AST parsing.

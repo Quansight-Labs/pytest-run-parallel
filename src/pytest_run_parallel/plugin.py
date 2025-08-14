@@ -343,7 +343,7 @@ def pytest_addoption(parser):
         action="store",
         dest="parallel_threads",
         default=1,
-        help="Set the number of threads used to execute each test concurrently.",
+        help="Set the number of threads used to execute each test concurrently. (default: %(default)s)",
     )
     group.addoption(
         "--iterations",
@@ -351,13 +351,13 @@ def pytest_addoption(parser):
         dest="iterations",
         default=1,
         type=int,
-        help="Set the number of iterations that each thread will run.",
+        help="Set the number of iterations that each thread will run. (default: %(default)s)",
     )
     group.addoption(
         "--skip-thread-unsafe",
         action="store",
         dest="skip_thread_unsafe",
-        help="Whether to skip running thread-unsafe tests",
+        help="Skip running thread-unsafe tests. If not provided, thread-unsafe tests will still run, but only in one thread.",
         type=bool,
         default=False,
     )

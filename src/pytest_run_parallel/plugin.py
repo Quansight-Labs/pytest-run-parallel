@@ -336,6 +336,7 @@ def pytest_configure(config):
 
 
 def pytest_addoption(parser):
+    # Note: new options should be on group, not parser
     group = parser.getgroup("run-parallel")
     group.addoption(
         "--parallel-threads",
@@ -352,7 +353,7 @@ def pytest_addoption(parser):
         type=int,
         help="Set the number of iterations that each thread will run.",
     )
-    parser.addoption(
+    group.addoption(
         "--skip-thread-unsafe",
         action="store",
         dest="skip_thread_unsafe",
@@ -360,25 +361,25 @@ def pytest_addoption(parser):
         type=bool,
         default=False,
     )
-    parser.addoption(
+    group.addoption(
         "--mark-warnings-as-unsafe",
         action="store_true",
         dest="mark_warnings_as_unsafe",
         default=False,
     )
-    parser.addoption(
+    group.addoption(
         "--mark-ctypes-as-unsafe",
         action="store_true",
         dest="mark_ctypes_as_unsafe",
         default=False,
     )
-    parser.addoption(
+    group.addoption(
         "--mark-hypothesis-as-unsafe",
         action="store_true",
         dest="mark_hypothesis_as_unsafe",
         default=False,
     )
-    parser.addoption(
+    group.addoption(
         "--ignore-gil-enabled",
         action="store_true",
         dest="ignore_gil_enabled",

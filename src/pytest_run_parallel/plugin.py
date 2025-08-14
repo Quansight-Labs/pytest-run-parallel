@@ -350,7 +350,7 @@ def pytest_addoption(parser):
         dest="iterations",
         default=1,
         type=int,
-        help="Set the number of threads used to execute each test concurrently.",
+        help="Set the number of iterations that each thread will run.",
     )
     parser.addoption(
         "--skip-thread-unsafe",

@@ -358,8 +358,8 @@ def pytest_addoption(parser):
         "--skip-thread-unsafe",
         action="store",
         dest="skip_thread_unsafe",
-        help="Skip running thread-unsafe tests. If not provided, thread-unsafe tests will still "
-        "run, but only in one thread.",
+        help="Whether to skip running thread-unsafe tests. If not provided, thread-unsafe tests "
+        "will still run, but only in one thread.",
         type=bool,
         default=False,
     )

@@ -1,4 +1,5 @@
 import os
+import sysconfig
 
 import pytest
 
@@ -6,6 +7,8 @@ try:
     import hypothesis
 except ImportError:
     hypothesis = None
+
+IS_FREE_THREADED_BUILD = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 
 
 def test_default_threads(pytester):
@@ -644,57 +647,85 @@ def test_runs_hypothesis_in_parallel(pytester):
     )
 
 
-def test_fail_warning_gil_enabled_during_execution(pytester):
+@pytest.mark.skipif(
+    not IS_FREE_THREADED_BUILD, reason="only tested on free-threaded build"
+)
+def test_fail_warning_gil_enabled_during_execution(pytester_subprocess):
     test_name = "test_fail_warning_gil_enabled_during_execution"
-    pytester.makepyfile(f"""
-    import warnings
-
+    pytester_subprocess.makepyfile(f"""
     def {test_name}():
-        warnings.warn(
-            "The global interpreter lock (GIL) has been enabled to load module 'module'",
-            RuntimeWarning
-        )
+        import gil_test.gil_enable
     """)
-    result = pytester.runpytest("-v")
+    result = pytester_subprocess.runpytest("-v")
     assert result.ret == 1
     result.stdout.fnmatch_lines(
         [
-            f"*GIL was dynamically re-enabled during test execution of '{test_name}.py::{test_name}' to load module 'module'*"
+            f"*GIL was dynamically re-enabled during test execution of '{test_name}.py::{test_name}' "
+            "to load module 'gil_test.gil_enable'*"
         ]
     )
 
 
-def test_fail_warning_gil_enabled_during_collection(pytester):
+@pytest.mark.skipif(
+    not IS_FREE_THREADED_BUILD, reason="only tested on free-threaded build"
+)
+def test_fail_warning_gil_enabled_during_collection(pytester_subprocess):
     test_name = "test_fail_warning_gil_enabled_during_collection"
-    pytester.makepyfile(f"""
-    import warnings
-    warnings.warn(
-        "The global interpreter lock (GIL) has been enabled to load module 'module'",
-        RuntimeWarning
-    )
+    pytester_subprocess.makepyfile(f"""
+    import gil_test.gil_enable
 
     def {test_name}():
         assert True
     """)
-    result = pytester.runpytest("-v")
+    result = pytester_subprocess.runpytest("-v")
     assert result.ret == 1
     result.stdout.fnmatch_lines(
         [
-            "*GIL was dynamically re-enabled during test collection to load module 'module'*"
+            "*GIL was dynamically re-enabled during test collection to load module 'gil_test.gil_enable'*"
         ]
     )
 
 
-def test_warning_gil_enabled_ignore_option(pytester):
-    pytester.makepyfile("""
-    import warnings
-    warnings.warn(
-        "The global interpreter lock (GIL) has been enabled to load module 'module'",
-        RuntimeWarning
-    )
+@pytest.mark.skipif(
+    not IS_FREE_THREADED_BUILD, reason="only tested on free-threaded build"
+)
+def test_warning_gil_enabled_ignore_option(pytester_subprocess):
+    pytester_subprocess.makepyfile("""
+    import gil_test.gil_enable
 
     def test_warning_gil_enabled_ignore_option():
         assert True
     """)
-    result = pytester.runpytest("-v", "--ignore-gil-enabled")
+    result = pytester_subprocess.runpytest("-v", "--ignore-gil-enabled")
     assert result.ret == 0
+
+
+@pytest.mark.skipif(
+    not IS_FREE_THREADED_BUILD, reason="only tested on free-threaded build"
+)
+def test_gil_disabled_module_during_execution(pytester_subprocess):
+    test_name = "test_gil_disabled_module_during_execution"
+    pytester_subprocess.makepyfile(f"""
+    def {test_name}():
+        import gil_test.gil_disable
+        assert True
+    """)
+    result = pytester_subprocess.runpytest("-v")
+    assert result.ret == 0
+    result.stdout.fnmatch_lines([f"*{test_name}.py::{test_name} PASSED*"])
+
+
+@pytest.mark.skipif(
+    not IS_FREE_THREADED_BUILD, reason="only tested on free-threaded build"
+)
+def test_gil_disabled_module_during_collection(pytester_subprocess):
+    test_name = "test_gil_disabled_module_during_collection"
+    pytester_subprocess.makepyfile(f"""
+    import gil_test.gil_disable
+
+    def {test_name}():
+        assert True
+    """)
+    result = pytester_subprocess.runpytest("-v")
+    assert result.ret == 0
+    result.stdout.fnmatch_lines([f"*{test_name}.py::{test_name} PASSED*"])

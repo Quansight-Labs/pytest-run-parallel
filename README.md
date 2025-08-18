@@ -94,6 +94,8 @@ those fixtures are shared between threads.
     - `num_parallel_threads`: The number of threads the test will run in
     - `num_iterations`: The number of iterations the test will run in
         each thread
+    - `thread_id`: A number id for the test's current thread.
+    - `iteration_id`: A number id for the test's current iteration.
 
 **Note**: It's possible to specify `--parallel-threads=auto` or
 `pytest.mark.parallel_threads("auto")` which will let
@@ -283,6 +285,18 @@ import pytest
 def test_skip_if_parallel(num_parallel_threads):
     if num_parallel_threads > 1:
         pytest.skip(reason='does not work in parallel')
+    ...
+```
+
+The `thread_id` and `iteration_id` fixtures are also avaliable, which enable
+tests to display different behavior between threads and iterations.
+
+```python
+# test_file.py
+
+def test_make_unique_files(tmp_path, thread_id):
+    # create unique file pathes between threads
+    file_path = tmp_path / str(thread_id)
     ...
 ```
 

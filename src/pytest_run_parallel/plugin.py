@@ -54,7 +54,13 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
         try:
 
             def closure(*args, **kwargs):
-                for _ in range(n_iterations):
+                if "thread_id" in kwargs:
+                    kwargs["thread_id"] = kwargs["_thread_id"]
+                del kwargs["_thread_id"]
+                
+                for i in range(n_iterations):
+                    if "iteration_id" in kwargs:
+                        kwargs["iteration_id"] = i
                     barrier.wait()
                     try:
                         fn(*args, **kwargs)
@@ -70,8 +76,11 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
                         failed = f
 
             workers = []
-            for _ in range(0, n_workers):
-                worker_kwargs = kwargs
+            for i in range(0, n_workers):
+                worker_kwargs = kwargs.copy()
+                if "_thread_id" in worker_kwargs:
+                    raise ValueError("_thread_id is a reserved word for pytest-run-parallel")
+                worker_kwargs["_thread_id"] = i
                 workers.append(
                     threading.Thread(target=closure, args=args, kwargs=worker_kwargs)
                 )
@@ -311,6 +320,18 @@ def num_parallel_threads(request):
 @pytest.fixture
 def num_iterations(request):
     return get_num_iterations(request.node)[0]
+
+
+# overwritten by wrap_function_parallel when using multiple threads
+@pytest.fixture
+def thread_id():
+    return 0
+
+
+# overwritten by wrap_function_parallel when using multiple iterations
+@pytest.fixture
+def iteration_id():
+    return 0
 
 
 @pytest.fixture

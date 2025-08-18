@@ -336,13 +336,15 @@ def pytest_configure(config):
 
 
 def pytest_addoption(parser):
+    # Note: new options should be on group, not parser
     group = parser.getgroup("run-parallel")
     group.addoption(
         "--parallel-threads",
         action="store",
         dest="parallel_threads",
         default=1,
-        help="Set the number of threads used to execute each test concurrently.",
+        help="Set the number of threads used to execute each test concurrently. (default: "
+        "%(default)s)",
     )
     group.addoption(
         "--iterations",
@@ -350,39 +352,49 @@ def pytest_addoption(parser):
         dest="iterations",
         default=1,
         type=int,
-        help="Set the number of iterations that each thread will run.",
+        help="Set the number of iterations that each thread will run. (default: %(default)s)",
     )
-    parser.addoption(
+    group.addoption(
         "--skip-thread-unsafe",
         action="store",
         dest="skip_thread_unsafe",
-        help="Whether to skip running thread-unsafe tests",
+        help="Whether to skip running thread-unsafe tests. If not provided, thread-unsafe tests "
+        "will still run, but only in one thread.",
         type=bool,
         default=False,
     )
-    parser.addoption(
+    group.addoption(
         "--mark-warnings-as-unsafe",
         action="store_true",
         dest="mark_warnings_as_unsafe",
         default=False,
+        help="Mark warnings capture, such as pytest.warns(), as thread-unsafe. If not provided, "
+        "the thread safety of warnings capture will be determined automatically.",
     )
-    parser.addoption(
+    group.addoption(
         "--mark-ctypes-as-unsafe",
         action="store_true",
         dest="mark_ctypes_as_unsafe",
         default=False,
+        help="Mark all uses of ctypes as thread-unsafe. If not provided, the thread safety of "
+        "ctypes (but not the underlying C code) will be determined automatically.",
     )
-    parser.addoption(
+    group.addoption(
         "--mark-hypothesis-as-unsafe",
         action="store_true",
         dest="mark_hypothesis_as_unsafe",
         default=False,
+        help="Mark hypothesis as thread-unsafe. If not provided, the thread safety of hypothesis "
+        "will be determined automatically.",
     )
-    parser.addoption(
+    group.addoption(
         "--ignore-gil-enabled",
         action="store_true",
         dest="ignore_gil_enabled",
         default=False,
+        help="Ignore the GIL becoming enabled in the middle of a test. By default, if the GIL is "
+        "re-enabled at runtime, pytest will exit with a non-zero exit code. This option has no "
+        "effect for non-free-threaded builds.",
     )
     parser.addini(
         "thread_unsafe_fixtures",

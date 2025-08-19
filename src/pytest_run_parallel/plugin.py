@@ -57,7 +57,7 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
                 if "thread_id" in kwargs:
                     kwargs["thread_id"] = kwargs["_thread_id"]
                 del kwargs["_thread_id"]
-                
+
                 for i in range(n_iterations):
                     if "iteration_id" in kwargs:
                         kwargs["iteration_id"] = i
@@ -79,7 +79,9 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
             for i in range(0, n_workers):
                 worker_kwargs = kwargs.copy()
                 if "_thread_id" in worker_kwargs:
-                    raise ValueError("_thread_id is a reserved word for pytest-run-parallel")
+                    raise ValueError(
+                        "_thread_id is a reserved word for pytest-run-parallel"
+                    )
                 worker_kwargs["_thread_id"] = i
                 workers.append(
                     threading.Thread(target=closure, args=args, kwargs=worker_kwargs)

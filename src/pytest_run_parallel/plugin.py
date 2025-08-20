@@ -54,13 +54,14 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
         try:
 
             def closure(*args, **kwargs):
-                if "thread_id" in kwargs:
-                    kwargs["thread_id"] = kwargs["_thread_id"]
-                del kwargs["_thread_id"]
-
+                # "smuggling" thread_index into closure with args
+                thread_index, args = args[0], args[1:]
+                if "thread_index" in kwargs:
+                    kwargs["thread_index"] = thread_index
+                
                 for i in range(n_iterations):
-                    if "iteration_id" in kwargs:
-                        kwargs["iteration_id"] = i
+                    if "iteration_index" in kwargs:
+                        kwargs["iteration_index"] = i
                     barrier.wait()
                     try:
                         fn(*args, **kwargs)
@@ -77,14 +78,10 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
 
             workers = []
             for i in range(0, n_workers):
-                worker_kwargs = kwargs.copy()
-                if "_thread_id" in worker_kwargs:
-                    raise ValueError(
-                        "_thread_id is a reserved word for pytest-run-parallel"
-                    )
-                worker_kwargs["_thread_id"] = i
+                worker_kwargs = kwargs
+                # "smuggling" i into closure with args to use for thread_index fixture
                 workers.append(
-                    threading.Thread(target=closure, args=args, kwargs=worker_kwargs)
+                    threading.Thread(target=closure, args=(i, *args), kwargs=worker_kwargs)
                 )
 
             num_completed = 0
@@ -326,13 +323,13 @@ def num_iterations(request):
 
 # overwritten by wrap_function_parallel when using multiple threads
 @pytest.fixture
-def thread_id():
+def thread_index():
     return 0
 
 
 # overwritten by wrap_function_parallel when using multiple iterations
 @pytest.fixture
-def iteration_id():
+def iteration_index():
     return 0
 
 

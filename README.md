@@ -94,6 +94,8 @@ those fixtures are shared between threads.
     - `num_parallel_threads`: The number of threads the test will run in
     - `num_iterations`: The number of iterations the test will run in
         each thread
+    - `thread_index`: An index for the test's current thread.
+    - `iteration_index`: An index for the test's current iteration.
 
 **Note**: It's possible to specify `--parallel-threads=auto` or
 `pytest.mark.parallel_threads("auto")` which will let
@@ -283,6 +285,20 @@ import pytest
 def test_skip_if_parallel(num_parallel_threads):
     if num_parallel_threads > 1:
         pytest.skip(reason='does not work in parallel')
+    ...
+```
+
+The `thread_index` and `iteration_index` fixtures are also avaliable, which enable
+tests to display different behavior between threads and iterations.
+
+```python
+# test_file.py
+import numpy as np
+
+def test_unique_rng_streams(thread_index):
+    # create an RNG stream with a seed that is deterministic
+    # but still unique to this thread
+    rng = np.random.default_rng(thread_index)
     ...
 ```
 

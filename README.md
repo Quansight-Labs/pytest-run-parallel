@@ -296,7 +296,7 @@ tests to display different behavior between threads and iterations.
 import numpy as np
 
 def test_unique_rng_streams(thread_index):
-    # create an RNG stream with a seed that is deterministic 
+    # create an RNG stream with a seed that is deterministic
     # but still unique to this thread
     rng = np.random.default_rng(thread_index)
     ...

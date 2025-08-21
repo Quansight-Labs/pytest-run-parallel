@@ -80,7 +80,9 @@ def test_iteration_index_multi_iteration(pytester: pytest.Pytester) -> None:
     )
 
 
-def test_iteration_index_multi_iteration_mutli_thread(pytester: pytest.Pytester) -> None:
+def test_iteration_index_multi_iteration_mutli_thread(
+    pytester: pytest.Pytester,
+) -> None:
     pytester.makepyfile("""
         def test_iteration_index(iteration_index, num_iterations):
             assert iteration_index < num_iterations

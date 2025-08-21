@@ -58,7 +58,7 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
                 thread_index, args = args[0], args[1:]
                 if "thread_index" in kwargs:
                     kwargs["thread_index"] = thread_index
-                
+
                 for i in range(n_iterations):
                     if "iteration_index" in kwargs:
                         kwargs["iteration_index"] = i
@@ -81,7 +81,9 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
                 worker_kwargs = kwargs
                 # "smuggling" i into closure with args to use for thread_index fixture
                 workers.append(
-                    threading.Thread(target=closure, args=(i, *args), kwargs=worker_kwargs)
+                    threading.Thread(
+                        target=closure, args=(i, *args), kwargs=worker_kwargs
+                    )
                 )
 
             num_completed = 0

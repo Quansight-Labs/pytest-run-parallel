@@ -3,6 +3,7 @@ import pytest
 parallel_iterations = [
     (1, 1, "PASSED"),  # no parallel threads, no iterations
     ("auto", 1, "PARALLEL PASSED"),  # parallel threads, no iterations
+    (1, 5, "PASSED"),  # no parallel threads, iterations
     ("auto", 5, "PARALLEL PASSED"),  # parallel threads and iterations
 ]
 

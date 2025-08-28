@@ -56,12 +56,11 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
             def closure(*args, **kwargs):
                 # "smuggling" thread_index into closure with args
                 thread_index, args = args[0], args[1:]
-                if "thread_index" in kwargs:
-                    kwargs["thread_index"] = thread_index
+                data = wrap_setup_thread(args, kwargs, thread_index)
 
                 for i in range(n_iterations):
-                    if "iteration_index" in kwargs:
-                        kwargs["iteration_index"] = i
+                    wrap_setup_iteration(args, kwargs, i, n_iterations, data)
+
                     barrier.wait()
                     try:
                         fn(*args, **kwargs)
@@ -98,6 +97,8 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
             for worker in workers:
                 worker.join()
 
+            # if we ever want to add cleanup, put it here
+
         finally:
             sys.setswitchinterval(original_switch)
 
@@ -109,6 +110,39 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
             raise errors[0]
 
     return inner
+
+
+def wrap_setup_thread(args, kwargs, thread_index):
+    # modifies fixtures if needed for each thread
+    # thread_index: passes in thread index
+    # tmp_path: creates and sets to subdirectories for each thread
+    data = {}
+    if "thread_index" in kwargs:
+        kwargs["thread_index"] = thread_index
+    if "tmp_path" in kwargs:
+        kwargs["tmp_path"] = kwargs["tmp_path"] / f"thread_{str(thread_index)}"
+        kwargs["tmp_path"].mkdir()
+        data["thread_tmp_path"] = kwargs["tmp_path"]
+    if "tmpdir" in kwargs:
+        kwargs["tmpdir"] = kwargs["tmpdir"].mkdir(f"thread_{str(thread_index)}")
+        data["thread_tmpdir"] = kwargs["tmpdir"]
+    # can return data that is used later in the wrap function if needed.
+    # currently returns the new tmp_path, used later when adding
+    # subdirectories to tmp_path for iterations.
+    return data
+
+
+def wrap_setup_iteration(args, kwargs, index, n_iterations, data):
+    # modifies fixtures if needed for each iteration
+    # iteration_index: passes in iteration index
+    # tmp_path: creates and sets to subdirectories for each iteration
+    if "iteration_index" in kwargs:
+        kwargs["iteration_index"] = index
+    if "tmp_path" in kwargs and n_iterations > 1:
+        kwargs["tmp_path"] = data["thread_tmp_path"] / f"iteration_{str(index)}"
+        kwargs["tmp_path"].mkdir()
+    if "tmpdir" in kwargs and n_iterations > 1:
+        kwargs["tmpdir"] = data["thread_tmpdir"].mkdir(f"iteration_{str(index)}")
 
 
 class RunParallelPlugin:

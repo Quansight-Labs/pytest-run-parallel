@@ -77,14 +77,14 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
         self.level = level
         self.modules_aliases = {}
         self.func_aliases = {}
+        self.globals = getattr(fn, "__globals__", {})
 
         # see issue #121, sometimes __globals__ isn't iterable
-        iter_globals = iter({})
         try:
-            iter_globals = iter(getattr(fn, "__globals__", {}))
-        except TypeError as e:
-            self.thread_unsafe = True
-            self.thread_unsafe_reason = f"test __globals__ not iterable: {e}"
+            iter_globals = iter(self.globals)
+        except TypeError:
+            self.globals = {}
+            iter_globals = {}
 
         try:
             for var_name in iter_globals:
@@ -158,7 +158,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                 return None
             return getattr(mod, node.attr, None)
 
-        if id in getattr(self.fn, "__globals__", {}):
+        if id in self.globals:
             mod = self.fn.__globals__[id]
             child_fn = _get_child_fn(mod, node)
             if child_fn is not None and callable(child_fn):
@@ -211,7 +211,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                 self._recursive_analyze_attribute(node)
 
     def _recursive_analyze_name(self, node):
-        if node.id in getattr(self.fn, "__globals__", {}):
+        if node.id in self.globals:
             child_fn = self.fn.__globals__[node.id]
             if callable(child_fn):
                 self.thread_unsafe, self.thread_unsafe_reason = (

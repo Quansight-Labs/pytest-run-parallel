@@ -99,7 +99,9 @@ those fixtures are shared between threads.
 
 - Modifications to existing fixtures:
     - `tmp_path` and `tmpdir`: Patched to be thread-safe, with individual
-        subdirectories being created for each thread and iteration.
+    subdirectories being created for each thread. Subdirectories are not
+    created for each iteration, so you may see issues with reused temporary
+    directions when using `--iterations`.
 
 **Note**: It's possible to specify `--parallel-threads=auto` or
 `pytest.mark.parallel_threads("auto")` which will let

@@ -78,30 +78,31 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
         self.modules_aliases = {}
         self.func_aliases = {}
 
+        iter_globals = iter({})
         try:
-            globals = getattr(fn, "__globals__", {})
-            for var_name in globals:
-                value = fn.__globals__[var_name]
-                if inspect.ismodule(value) and value.__name__ in modules:
-                    self.modules_aliases[var_name] = value.__name__
-                elif inspect.isfunction(value):
-                    if value.__module__ is None:
-                        continue
-                    if value.__module__ in modules:
-                        self.func_aliases[var_name] = (value.__module__, value.__name__)
-                        continue
-
-                    all_parents = self._create_all_parent_modules(value.__module__)
-                    for parent in all_parents:
-                        if parent in modules:
-                            self.func_aliases[var_name] = (parent, value.__name__)
-                            break
-        except Exception:
-            print("Exception occured")
+            iter_globals = iter(getattr(fn, "__globals__", {}))
+        except Exception as e:
             self.thread_unsafe = True
             self.thread_unsafe_reason = (
-                "Caught an exception while parsing AST. Please report bug."
+                f"caught an exception while parsing AST, please report bug: {e}"
             )
+
+        for var_name in iter_globals:
+            value = fn.__globals__[var_name]
+            if inspect.ismodule(value) and value.__name__ in modules:
+                self.modules_aliases[var_name] = value.__name__
+            elif inspect.isfunction(value):
+                if value.__module__ is None:
+                    continue
+                if value.__module__ in modules:
+                    self.func_aliases[var_name] = (value.__module__, value.__name__)
+                    continue
+
+                all_parents = self._create_all_parent_modules(value.__module__)
+                for parent in all_parents:
+                    if parent in modules:
+                        self.func_aliases[var_name] = (parent, value.__name__)
+                        break
 
         super().__init__()
 

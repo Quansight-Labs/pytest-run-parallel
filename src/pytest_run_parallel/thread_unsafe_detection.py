@@ -77,22 +77,31 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
         self.level = level
         self.modules_aliases = {}
         self.func_aliases = {}
-        for var_name in getattr(fn, "__globals__", {}):
-            value = fn.__globals__[var_name]
-            if inspect.ismodule(value) and value.__name__ in modules:
-                self.modules_aliases[var_name] = value.__name__
-            elif inspect.isfunction(value):
-                if value.__module__ is None:
-                    continue
-                if value.__module__ in modules:
-                    self.func_aliases[var_name] = (value.__module__, value.__name__)
-                    continue
 
-                all_parents = self._create_all_parent_modules(value.__module__)
-                for parent in all_parents:
-                    if parent in modules:
-                        self.func_aliases[var_name] = (parent, value.__name__)
-                        break
+        try:
+            globals = getattr(fn, "__globals__", {})
+            for var_name in globals:
+                value = fn.__globals__[var_name]
+                if inspect.ismodule(value) and value.__name__ in modules:
+                    self.modules_aliases[var_name] = value.__name__
+                elif inspect.isfunction(value):
+                    if value.__module__ is None:
+                        continue
+                    if value.__module__ in modules:
+                        self.func_aliases[var_name] = (value.__module__, value.__name__)
+                        continue
+
+                    all_parents = self._create_all_parent_modules(value.__module__)
+                    for parent in all_parents:
+                        if parent in modules:
+                            self.func_aliases[var_name] = (parent, value.__name__)
+                            break
+        except Exception:
+            print("Exception occured")
+            self.thread_unsafe = True
+            self.thread_unsafe_reason = (
+                "Caught an exception while parsing AST. Please report bug."
+            )
 
         super().__init__()
 

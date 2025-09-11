@@ -307,7 +307,7 @@ def _identify_thread_unsafe_nodes(
     except Exception as e:
         return (
             True,
-            f"caught an exception while parsing AST, please report bug to pytest-run-parallel: {e}",
+            f"caught {type(e).__name__} exception while parsing AST, please report bug to pytest-run-parallel: {e}",
         )
 
 

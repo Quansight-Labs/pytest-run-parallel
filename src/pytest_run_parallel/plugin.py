@@ -1,4 +1,5 @@
 import functools
+import itertools
 import os
 import re
 import sys
@@ -119,6 +120,7 @@ class RunParallelPlugin:
         self.mark_ctypes_as_unsafe = config.option.mark_ctypes_as_unsafe
         self.mark_hypothesis_as_unsafe = config.option.mark_hypothesis_as_unsafe
         self.ignore_gil_enabled = config.option.ignore_gil_enabled
+        self.forever = config.option.forever
 
         skipped_functions = [
             x.split(".") for x in config.getini("thread_unsafe_functions")
@@ -167,6 +169,44 @@ class RunParallelPlugin:
             self.mark_ctypes_as_unsafe,
             self.mark_hypothesis_as_unsafe,
         )
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_runtestloop(self, session):
+        if (
+            session.testsfailed
+            and not session.config.option.continue_on_collection_errors
+        ):
+            raise session.Interrupted(
+                "%d errors during collection" % session.testsfailed
+            )
+
+        if session.config.option.collectonly:
+            return True
+
+        itemsiter = iter(session.items)
+        if self.forever:
+            itemsiter = itertools.cycle(itemsiter)
+
+        try:
+            item = next(itemsiter)
+        except StopIteration:
+            item = None
+
+        while item is not None:
+            try:
+                nextitem = next(itemsiter)
+            except StopIteration:
+                nextitem = None
+
+            item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
+            if session.shouldfail:
+                raise session.Failed(session.shouldfail)
+            if session.shouldstop:
+                raise session.Interrupted(session.shouldstop)
+
+            item = nextitem
+
+        return True
 
     @pytest.hookimpl(trylast=True)
     def pytest_itemcollected(self, item):
@@ -417,6 +457,13 @@ def pytest_addoption(parser):
         help="Ignore the GIL becoming enabled in the middle of a test. By default, if the GIL is "
         "re-enabled at runtime, pytest will exit with a non-zero exit code. This option has no "
         "effect for non-free-threaded builds.",
+    )
+    group.addoption(
+        "--forever",
+        action="store_true",
+        dest="forever",
+        default=False,
+        help="Run the test loop forever.",
     )
     parser.addini(
         "thread_unsafe_fixtures",

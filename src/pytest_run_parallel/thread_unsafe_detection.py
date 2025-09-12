@@ -321,7 +321,6 @@ def _identify_thread_unsafe_nodes(
         warnings.warn(msg, RuntimeWarning)
         return False, None
 
-
     return visitor.thread_unsafe, visitor.thread_unsafe_reason
 
 

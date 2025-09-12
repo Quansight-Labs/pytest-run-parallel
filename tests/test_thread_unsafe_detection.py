@@ -768,7 +768,7 @@ def test_ast_parsing_error():
     def dummy_test():
         assert True
 
-    class RaisesError():
+    class RaisesError:
         def __init__(self, wrapped_test):
             self.wrapped_test = wrapped_test
 
@@ -780,9 +780,12 @@ def test_ast_parsing_error():
         def __call__(self, *args, **kwargs):
             return self.wrapped_test(*args, **kwargs)
 
-    msg = (r"Uncaught exception while checking test[\s\S]*"
-           "Intentionally break AST parsing")
+    msg = (
+        r"Uncaught exception while checking test[\s\S]*"
+        "Intentionally break AST parsing"
+    )
 
     with pytest.warns(RuntimeWarning, match=msg):
         identify_thread_unsafe_nodes(
-            RaisesError(dummy_test), frozenset(), False, False, False)
+            RaisesError(dummy_test), frozenset(), False, False, False
+        )

@@ -56,8 +56,6 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
             def closure(*args, **kwargs):
                 # "smuggling" thread_index into closure with args
                 thread_index, args = args[0], args[1:]
-                thread_tmp_path = None
-                thread_tmpdir = None
                 # modifying fixtures
                 if n_workers > 1:
                     if "thread_index" in kwargs:
@@ -67,29 +65,14 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
                             kwargs["tmp_path"] / f"thread_{thread_index!s}"
                         )
                         kwargs["tmp_path"].mkdir()
-                        thread_tmp_path = kwargs["tmp_path"]
                     if "tmpdir" in kwargs:
                         kwargs["tmpdir"] = kwargs["tmpdir"].mkdir(
                             f"thread_{thread_index!s}"
                         )
-                        thread_tmpdir = kwargs["tmpdir"]
-
-                if n_iterations > 1:
-                    if "tmp_path" in kwargs:
-                        for i in range(n_iterations):
-                            (thread_tmp_path / f"iteration_{i!s}").mkdir()
-                    if "tmpdir" in kwargs:
-                        for i in range(n_iterations):
-                            thread_tmpdir.mkdir(f"iteration_{i!s}")
 
                 for i in range(n_iterations):
-                    if n_iterations > 1:
-                        if "iteration_index" in kwargs:
-                            kwargs["iteration_index"] = i
-                        if "tmp_path" in kwargs:
-                            kwargs["tmp_path"] = thread_tmp_path / f"iteration_{i!s}"
-                        if "tmpdir" in kwargs:
-                            kwargs["tmpdir"] = thread_tmpdir.join(f"iteration_{i!s}")
+                    if "iteration_index" in kwargs:
+                        kwargs["iteration_index"] = i
 
                     barrier.wait()
                     try:

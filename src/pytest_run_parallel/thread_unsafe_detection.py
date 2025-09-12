@@ -311,7 +311,7 @@ def _identify_thread_unsafe_nodes(
     except Exception as e:
         tb = traceback.format_exc()
         msg = (
-            f"Uncaught exception while checking test '{str(fn)}' for thread-unsafe "
+            f"Uncaught exception while checking test '{fn}' for thread-unsafe "
             "functionality. Please report a bug to pytest-run-parallel at "
             "https://github.com/Quansight-Labs/pytest-run-parallel/issues/new "
             "including this message if thread safety detection should work.\n"

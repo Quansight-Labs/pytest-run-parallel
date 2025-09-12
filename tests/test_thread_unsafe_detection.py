@@ -4,6 +4,8 @@ import textwrap
 
 import pytest
 
+from pytest_run_parallel.thread_unsafe_detection import identify_thread_unsafe_nodes
+
 try:
     import hypothesis
 except ImportError:
@@ -760,3 +762,27 @@ def test_thread_unsafe_detection_can_handle_none_module(pytester):
             "*::test_has_l_in_globals PARALLEL PASSED*",
         ]
     )
+
+
+def test_ast_parsing_error():
+    def dummy_test():
+        assert True
+
+    class RaisesError():
+        def __init__(self, wrapped_test):
+            self.wrapped_test = wrapped_test
+
+        def __getattr__(self, name):
+            if name == "__globals__":
+                raise RuntimeError("Intentionally break AST parsing")
+            return self.wrapped_test.__getattribute__(name)
+
+        def __call__(self, *args, **kwargs):
+            return self.wrapped_test(*args, **kwargs)
+
+    msg = (r"Uncaught exception while checking test[\s\S]*"
+           "Intentionally break AST parsing")
+
+    with pytest.warns(RuntimeWarning, match=msg):
+        identify_thread_unsafe_nodes(
+            RaisesError(dummy_test), frozenset(), False, False, False)

@@ -29,7 +29,8 @@ GIL_ENABLED_ERROR_TEXT = (
     "When running under a free-threaded interpreter with the GIL initially disabled, "
     "the test suite must not cause the GIL to be re-enabled at runtime. Check "
     "for compiled extension modules that do not use the 'Py_mod_gil' slot or the "
-    "'PyUnstable_Module_SetGIL' API."
+    "'PyUnstable_Module_SetGIL' API. Pass --ignore-gil-enabled in your pytest invocation"
+    "to ignore this and run the tests anyway."
 )
 
 

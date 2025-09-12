@@ -61,7 +61,7 @@ those fixtures are shared between threads.
 
 ## Features
 
-- Six global CLI flags:
+- Global CLI flags:
     - `--parallel-threads` to run a test suite in parallel
     - `--iterations` to run multiple times in each thread
     - `--skip-thread-unsafe` to skip running tests marked as or
@@ -79,6 +79,11 @@ those fixtures are shared between threads.
       this flag is an escape hatch in case you run into thread-safety
       problems caused by Hypothesis, or in tests that happen to use
       hypothesis and were skipped in older versions of pytest-run-parallel.
+    - `--ignore-gil-enabled`, to ignore the RuntimeWarning generated
+      when the GIL is enabled at runtime on the free-threaded build
+      and run the tests despite the fact that the GIL is enabled.
+      This option has no effect if pytest is configured to treat warnings
+      as errors.
 
 
 - Three corresponding markers:

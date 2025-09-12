@@ -2,6 +2,8 @@ import ast
 import functools
 import inspect
 import sys
+import traceback
+import warnings
 
 try:
     # added in hypothesis 6.131.0
@@ -285,30 +287,42 @@ def _identify_thread_unsafe_nodes(
             )
 
     try:
-        src = inspect.getsource(fn)
-    except Exception:
-        return False, None
-
-    if _is_source_indented(src):
-        # This test was extracted from a class or indented area, and Python needs
-        # to be told to expect indentation.
-        src = "if True:\n" + src
-    try:
-        tree = ast.parse(src)
-    except Exception:
-        return False, None
-
-    try:
         visitor = ThreadUnsafeNodeVisitor(
             fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=level
         )
+        try:
+            src = inspect.getsource(fn)
+        except (OSError, TypeError):
+            # if we can't get the source code (e.g. builtin function)
+            # then give up and don't attempt detection but default to assuming
+            # thread safety
+            return False, None
+        if _is_source_indented(src):
+            # This test was extracted from a class or indented area, and Python needs
+            # to be told to expect indentation.
+            src = "if True:\n" + src
+        try:
+            tree = ast.parse(src)
+        except (SyntaxError, ValueError):
+            # AST parsing failed because the AST is invalid. Who knows why but that means
+            # we can't run thread safety detection. Bail and assume thread-safe.
+            return False, None
         visitor.visit(tree)
-        return visitor.thread_unsafe, visitor.thread_unsafe_reason
     except Exception as e:
-        return (
-            True,
-            f"caught {type(e).__name__} exception while parsing AST, please report bug to pytest-run-parallel: {e}",
+        tb = traceback.format_exc()
+        msg = (
+            f"Uncaught exception while checking test '{fn}' for thread-unsafe "
+            "functionality. Please report a bug to pytest-run-parallel at "
+            "https://github.com/Quansight-Labs/pytest-run-parallel/issues/new "
+            "including this message if thread safety detection should work.\n"
+            f"{e}\n{tb}\n"
+            "Assuming this test is thread-safe."
         )
+        warnings.warn(msg, RuntimeWarning)
+        return False, None
+
+
+    return visitor.thread_unsafe, visitor.thread_unsafe_reason
 
 
 cached_thread_unsafe_identify = functools.lru_cache(_identify_thread_unsafe_nodes)

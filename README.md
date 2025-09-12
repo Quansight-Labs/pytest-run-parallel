@@ -72,13 +72,19 @@ those fixtures are shared between threads.
        adding support for Python 3.14 to a library that already
        runs tests under pytest-run-parallel on Python 3.13 or
        older.
-    - `--mark-hypothesis-as-unsafe`, to always skip runing tests that
+    - `--mark-hypothesis-as-unsafe` to always skip runing tests that
       use [hypothesis](https://github.com/hypothesisworks/hypothesis).
       While newer version of Hypothesis are thread-safe, and versions
       which are not are automatically skipped by `pytest-run-parallel`,
       this flag is an escape hatch in case you run into thread-safety
       problems caused by Hypothesis, or in tests that happen to use
       hypothesis and were skipped in older versions of pytest-run-parallel.
+    - `--forever` to keep running tests in an endless loop starting
+      from the top when completing a test run, until a test crashes or
+      the user explicitly ends the process with Ctrl-C. This is especially
+      helpful when trying to reproduce thread safety bugs that might only
+      occur rarely. Note that pytest's progress indicator with keep showing
+      100% forever after the first pass of the test suite.
 
 
 - Three corresponding markers:

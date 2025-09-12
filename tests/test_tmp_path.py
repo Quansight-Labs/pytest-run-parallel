@@ -1,17 +1,20 @@
 import pytest
 
 parallel_threads = [
-    (1, "PASSED"),  # no parallel threads
-    ("auto", "PARALLEL PASSED"),  # parallel threads
+    (1, 1, "PASSED"),  # no parallel threads
+    (1, 4, "PASSED"),  # no parallel threads
+    ("auto", 1, "PARALLEL PASSED"),  # parallel threads
+    ("auto", 4, "PARALLEL PASSED"),  # parallel threads
 ]
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmp_path_is_empty(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel, it, passing", parallel_threads)
+def test_tmp_path_is_empty(pytester: pytest.Pytester, parallel, it, passing):
     # ensures tmp_path is empty for each thread
     # test from (gh-109)
     pytester.makepyfile("""
         def test_tmp_path(tmp_path):
+            print(tmp_path)
             assert tmp_path.exists()
             assert tmp_path.is_dir()
             assert len(list(tmp_path.iterdir())) == 0
@@ -21,7 +24,9 @@ def test_tmp_path_is_empty(pytester: pytest.Pytester, parallel, passing):
             assert d.exists()
     """)
 
-    result = pytester.runpytest(f"--parallel-threads={parallel}", "-v")
+    result = pytester.runpytest(
+        f"--parallel-threads={parallel}", f"--iterations={it}", "-v"
+    )
 
     result.stdout.fnmatch_lines(
         [
@@ -30,8 +35,8 @@ def test_tmp_path_is_empty(pytester: pytest.Pytester, parallel, passing):
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmp_path_read_write(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel, it, passing", parallel_threads)
+def test_tmp_path_read_write(pytester: pytest.Pytester, parallel, it, passing):
     # ensures we can read/write in each tmp_path
     pytester.makepyfile("""
         def test_tmp_path(tmp_path):
@@ -42,7 +47,9 @@ def test_tmp_path_read_write(pytester: pytest.Pytester, parallel, passing):
             assert file.read_text() == "Hello world!"
     """)
 
-    result = pytester.runpytest(f"--parallel-threads={parallel}", "-v")
+    result = pytester.runpytest(
+        f"--parallel-threads={parallel}", f"--iterations={it}", "-v"
+    )
 
     result.stdout.fnmatch_lines(
         [
@@ -51,8 +58,8 @@ def test_tmp_path_read_write(pytester: pytest.Pytester, parallel, passing):
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmp_path_delete(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel, it, passing", parallel_threads)
+def test_tmp_path_delete(pytester: pytest.Pytester, parallel, it, passing):
     # ensures we can delete files in each tmp_path
     pytester.makepyfile("""
         def test_tmp_path(tmp_path):
@@ -68,7 +75,9 @@ def test_tmp_path_delete(pytester: pytest.Pytester, parallel, passing):
             assert not subdir.exists()
     """)
 
-    result = pytester.runpytest(f"--parallel-threads={parallel}", "-v")
+    result = pytester.runpytest(
+        f"--parallel-threads={parallel}", f"--iterations={it}", "-v"
+    )
 
     result.stdout.fnmatch_lines(
         [
@@ -77,8 +86,8 @@ def test_tmp_path_delete(pytester: pytest.Pytester, parallel, passing):
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmpdir_is_empty(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel, it, passing", parallel_threads)
+def test_tmpdir_is_empty(pytester: pytest.Pytester, parallel, it, passing):
     # ensures tmpdir is empty for each thread
     pytester.makepyfile("""
         def test_tmpdir(tmpdir):
@@ -89,7 +98,9 @@ def test_tmpdir_is_empty(pytester: pytest.Pytester, parallel, passing):
             assert tmpdir.mkdir("sub").check()
     """)
 
-    result = pytester.runpytest(f"--parallel-threads={parallel}", "-v")
+    result = pytester.runpytest(
+        f"--parallel-threads={parallel}", f"--iterations={it}", "-v"
+    )
 
     result.stdout.fnmatch_lines(
         [
@@ -98,8 +109,8 @@ def test_tmpdir_is_empty(pytester: pytest.Pytester, parallel, passing):
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmpdir_read_write(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel, it, passing", parallel_threads)
+def test_tmpdir_read_write(pytester: pytest.Pytester, parallel, it, passing):
     # ensures we can read/write in each tmpdir
     pytester.makepyfile("""
         def test_tmpdir(tmpdir):
@@ -110,7 +121,9 @@ def test_tmpdir_read_write(pytester: pytest.Pytester, parallel, passing):
             assert file.read_text("utf-8") == "Hello world!"
     """)
 
-    result = pytester.runpytest(f"--parallel-threads={parallel}", "-v")
+    result = pytester.runpytest(
+        f"--parallel-threads={parallel}", f"--iterations={it}", "-v"
+    )
 
     result.stdout.fnmatch_lines(
         [
@@ -119,8 +132,8 @@ def test_tmpdir_read_write(pytester: pytest.Pytester, parallel, passing):
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmpdir_delete(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel, it, passing", parallel_threads)
+def test_tmpdir_delete(pytester: pytest.Pytester, parallel, it, passing):
     # ensures we can delete files in each tmpdir
     pytester.makepyfile("""
         def test_tmpdir(tmpdir):
@@ -135,10 +148,35 @@ def test_tmpdir_delete(pytester: pytest.Pytester, parallel, passing):
             assert not subdir.check()
     """)
 
-    result = pytester.runpytest(f"--parallel-threads={parallel}", "-v")
+    result = pytester.runpytest(
+        f"--parallel-threads={parallel}", f"--iterations={it}", "-v"
+    )
 
     result.stdout.fnmatch_lines(
         [
             f"*::test_tmpdir {passing}*",
         ]
     )
+
+
+@pytest.mark.parametrize("parallel, it, passing", parallel_threads)
+def test_tmp_path_tmpdir(pytester: pytest.Pytester, parallel, it, passing):
+    # ensures we can delete files in each tmpdir
+    pytester.makepyfile("""
+        def test_both(tmp_path, tmpdir):
+            pass
+    """)
+
+    result = pytester.runpytest(
+        f"--parallel-threads={parallel}", f"--iterations={it}", "-v"
+    )
+
+    result.stdout.fnmatch_lines(
+        [
+            f"*::test_both {passing}*",
+        ]
+    )
+
+
+def test_large_iterations(tmp_path):
+    print(tmp_path)

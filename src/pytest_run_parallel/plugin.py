@@ -172,6 +172,11 @@ class RunParallelPlugin:
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_runtestloop(self, session):
+        """
+        Based on the default implementation in pytest, but also adds support
+        for running the tests in an endless loop.
+        """
+
         if (
             session.testsfailed
             and not session.config.option.continue_on_collection_errors
@@ -463,7 +468,9 @@ def pytest_addoption(parser):
         action="store_true",
         dest="forever",
         default=False,
-        help="Run the test loop forever.",
+        help="Run the test loop forever (starting from the top when all the tests have been run), "
+        "until one crashes or the user explicitly stops the process with Ctrl-C. This is especially "
+        "helpful for hitting thread safety bugs that only occur rarely.",
     )
     parser.addini(
         "thread_unsafe_fixtures",

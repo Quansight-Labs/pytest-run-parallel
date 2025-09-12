@@ -82,6 +82,7 @@ commands = [
     "--source=pytest_run_parallel,tests",
     "-m",
     "pytest",
+    "-W",
     "-v",
     "{posargs:tests}"
     ],

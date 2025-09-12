@@ -83,7 +83,7 @@ those fixtures are shared between threads.
       from the top when completing a test run, until a test crashes or
       the user explicitly ends the process with Ctrl-C. This is especially
       helpful when trying to reproduce thread safety bugs that might only
-      occur rarely. Note that pytest's progress indicator with keep showing
+      occur rarely. Note that pytest's progress indicator will keep showing
       100% forever after the first pass of the test suite.
 
 

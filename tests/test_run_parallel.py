@@ -519,7 +519,7 @@ def test_incompatible_test_item(pytester):
     def test_incompatible_item():
         assert True
     """)
-    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result = pytester.runpytest("--parallel-threads=10", "-v", "-W", "default")
     result.stdout.fnmatch_lines(
         [
             "*::test_incompatible_item PASSED*",
@@ -655,7 +655,7 @@ def test_fail_warning_gil_enabled_during_execution(pytester):
             RuntimeWarning
         )
     """)
-    result = pytester.runpytest("-v")
+    result = pytester.runpytest("-v", "-W", "default")
     assert result.ret == 1
     result.stdout.fnmatch_lines(
         [
@@ -676,7 +676,7 @@ def test_fail_warning_gil_enabled_during_collection(pytester):
     def {test_name}():
         assert True
     """)
-    result = pytester.runpytest("-v")
+    result = pytester.runpytest("-v", "-W", "default")
     assert result.ret == 1
     result.stdout.fnmatch_lines(
         [
@@ -696,5 +696,5 @@ def test_warning_gil_enabled_ignore_option(pytester):
     def test_warning_gil_enabled_ignore_option():
         assert True
     """)
-    result = pytester.runpytest("-v", "--ignore-gil-enabled")
+    result = pytester.runpytest("-v", "--ignore-gil-enabled", "-W", "default")
     assert result.ret == 0

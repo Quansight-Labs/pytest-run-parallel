@@ -196,7 +196,7 @@ class RunParallelPlugin:
             next_idx = next_idx % number_of_items
 
         while idx < number_of_items:
-            if idx == 0:
+            if idx == 0 and self.forever:
                 print("\n\n", end="")
                 print("==========================================================")
                 print("You ran the test suite with 'forever' mode enabled.")

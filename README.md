@@ -85,7 +85,7 @@ those fixtures are shared between threads.
       helpful when trying to reproduce thread safety bugs that might only
       occur rarely. Note that pytest's progress indicator will keep showing
       100% forever after the first pass of the test suite.
-    - `--ignore-gil-enabled`, to ignore the RuntimeWarning generated
+    - `--ignore-gil-enabled` to ignore the RuntimeWarning generated
       when the GIL is enabled at runtime on the free-threaded build
       and run the tests despite the fact that the GIL is enabled.
       This option has no effect if pytest is configured to treat warnings

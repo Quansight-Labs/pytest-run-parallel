@@ -83,12 +83,11 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
 
         # see issue #121, sometimes __globals__ isn't iterable
         try:
-            iter_globals = iter(self.globals)
+            iter(self.globals)
         except TypeError:
             self.globals = {}
-            iter_globals = {}
 
-        for var_name in iter_globals:
+        for var_name in iter(self.globals):
             value = fn.__globals__[var_name]
             if inspect.ismodule(value) and value.__name__ in modules:
                 self.modules_aliases[var_name] = value.__name__

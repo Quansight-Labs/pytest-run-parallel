@@ -150,7 +150,9 @@ def test_tmp_path_tmpdir(pytester: pytest.Pytester, parallel, passing):
     # ensures tmp_path and tmpdir can be used at the same time
     pytester.makepyfile("""
         def test_both(tmp_path, tmpdir):
-            pass
+            assert tmp_path.exists()
+            assert tmpdir.check(dir=1)
+            assert tmp_path == tmpdir
     """)
 
     result = pytester.runpytest(f"--parallel-threads={parallel}", "-v")

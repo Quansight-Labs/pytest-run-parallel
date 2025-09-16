@@ -1,5 +1,4 @@
 import functools
-import itertools
 import os
 import re
 import sys
@@ -171,7 +170,7 @@ class RunParallelPlugin:
         )
 
     @pytest.hookimpl(tryfirst=True)
-    def pytest_runtestloop(self, session):
+    def pytest_runtestloop(self, session: pytest.Session):
         """
         Based on the default implementation in pytest, but also adds support
         for running the tests in an endless loop.
@@ -188,20 +187,24 @@ class RunParallelPlugin:
         if session.config.option.collectonly:
             return True
 
-        itemsiter = iter(session.items)
+        number_of_items = len(session.items)
+        iter_number = 0
+        idx = 0
+        next_idx = idx + 1
         if self.forever:
-            itemsiter = itertools.cycle(itemsiter)
+            next_idx = next_idx % number_of_items
 
-        try:
-            item = next(itemsiter)
-        except StopIteration:
-            item = None
+        while idx < number_of_items:
+            if idx == 0:
+                print("\n\n", end="")
+                print("==========================================================")
+                print("You ran the test suite with 'forever' mode enabled.")
+                print(f"Running the tests again. This is iteration #{iter_number}.")
+                print("==========================================================")
+                iter_number += 1
 
-        while item is not None:
-            try:
-                nextitem = next(itemsiter)
-            except StopIteration:
-                nextitem = None
+            item = session.items[idx]
+            nextitem = session.items[next_idx] if next_idx < number_of_items else None
 
             item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
             if session.shouldfail:
@@ -209,7 +212,10 @@ class RunParallelPlugin:
             if session.shouldstop:
                 raise session.Interrupted(session.shouldstop)
 
-            item = nextitem
+            idx = next_idx
+            next_idx = idx + 1
+            if self.forever:
+                next_idx = next_idx % number_of_items
 
         return True
 

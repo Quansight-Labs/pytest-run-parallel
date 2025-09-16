@@ -57,12 +57,24 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
             def closure(*args, **kwargs):
                 # "smuggling" thread_index into closure with args
                 thread_index, args = args[0], args[1:]
-                if "thread_index" in kwargs:
-                    kwargs["thread_index"] = thread_index
+                # modifying fixtures
+                if n_workers > 1:
+                    if "thread_index" in kwargs:
+                        kwargs["thread_index"] = thread_index
+                    if "tmp_path" in kwargs:
+                        kwargs["tmp_path"] = (
+                            kwargs["tmp_path"] / f"thread_{thread_index!s}"
+                        )
+                        kwargs["tmp_path"].mkdir(exist_ok=True)
+                    if "tmpdir" in kwargs:
+                        kwargs["tmpdir"] = kwargs["tmpdir"].ensure(
+                            f"thread_{thread_index!s}", dir=True
+                        )
 
                 for i in range(n_iterations):
                     if "iteration_index" in kwargs:
                         kwargs["iteration_index"] = i
+
                     barrier.wait()
                     try:
                         fn(*args, **kwargs)
@@ -98,6 +110,8 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
 
             for worker in workers:
                 worker.join()
+
+            # if we ever want to add cleanup, put it here
 
         finally:
             sys.setswitchinterval(original_switch)

@@ -95,12 +95,18 @@ those fixtures are shared between threads.
     - `pytest.mark.iterations(n)` to mark a single test to run `n`
         times in each thread
 
-- And the corresponding fixtures:
+- Four corresponding fixtures:
     - `num_parallel_threads`: The number of threads the test will run in
     - `num_iterations`: The number of iterations the test will run in
         each thread
     - `thread_index`: An index for the test's current thread.
     - `iteration_index`: An index for the test's current iteration.
+
+- Modifications to existing fixtures:
+    - `tmp_path` and `tmpdir`: Patched to be thread-safe, with individual
+    subdirectories being created for each thread. Subdirectories are not
+    created for each iteration, so you may see issues with reused temporary
+    directions when using `--iterations`.
 
 **Note**: It's possible to specify `--parallel-threads=auto` or
 `pytest.mark.parallel_threads("auto")` which will let

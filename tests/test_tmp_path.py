@@ -147,7 +147,7 @@ def test_tmpdir_delete(pytester: pytest.Pytester, parallel, passing):
 
 @pytest.mark.parametrize("parallel, passing", parallel_threads)
 def test_tmp_path_tmpdir(pytester: pytest.Pytester, parallel, passing):
-    # ensures we can delete files in each tmpdir
+    # ensures tmp_path and tmpdir can be used at the same time
     pytester.makepyfile("""
         def test_both(tmp_path, tmpdir):
             pass

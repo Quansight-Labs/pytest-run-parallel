@@ -2,6 +2,8 @@ import ast
 import functools
 import inspect
 import sys
+import traceback
+import warnings
 
 try:
     # added in hypothesis 6.131.0
@@ -77,7 +79,15 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
         self.level = level
         self.modules_aliases = {}
         self.func_aliases = {}
-        for var_name in getattr(fn, "__globals__", {}):
+        self.globals = getattr(fn, "__globals__", {})
+
+        # see issue #121, sometimes __globals__ isn't iterable
+        try:
+            iter(self.globals)
+        except TypeError:
+            self.globals = {}
+
+        for var_name in iter(self.globals):
             value = fn.__globals__[var_name]
             if inspect.ismodule(value) and value.__name__ in modules:
                 self.modules_aliases[var_name] = value.__name__
@@ -143,7 +153,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                 return None
             return getattr(mod, node.attr, None)
 
-        if id in getattr(self.fn, "__globals__", {}):
+        if id in self.globals:
             mod = self.fn.__globals__[id]
             child_fn = _get_child_fn(mod, node)
             if child_fn is not None and callable(child_fn):
@@ -196,7 +206,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
                 self._recursive_analyze_attribute(node)
 
     def _recursive_analyze_name(self, node):
-        if node.id in getattr(self.fn, "__globals__", {}):
+        if node.id in self.globals:
             child_fn = self.fn.__globals__[node.id]
             if callable(child_fn):
                 self.thread_unsafe, self.thread_unsafe_reason = (
@@ -276,23 +286,40 @@ def _identify_thread_unsafe_nodes(
             )
 
     try:
-        src = inspect.getsource(fn)
-    except Exception:
+        visitor = ThreadUnsafeNodeVisitor(
+            fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=level
+        )
+        try:
+            src = inspect.getsource(fn)
+        except (OSError, TypeError):
+            # if we can't get the source code (e.g. builtin function)
+            # then give up and don't attempt detection but default to assuming
+            # thread safety
+            return False, None
+        if _is_source_indented(src):
+            # This test was extracted from a class or indented area, and Python needs
+            # to be told to expect indentation.
+            src = "if True:\n" + src
+        try:
+            tree = ast.parse(src)
+        except (SyntaxError, ValueError):
+            # AST parsing failed because the AST is invalid. Who knows why but that means
+            # we can't run thread safety detection. Bail and assume thread-safe.
+            return False, None
+        visitor.visit(tree)
+    except Exception as e:
+        tb = traceback.format_exc()
+        msg = (
+            f"Uncaught exception while checking test '{fn}' for thread-unsafe "
+            "functionality. Please report a bug to pytest-run-parallel at "
+            "https://github.com/Quansight-Labs/pytest-run-parallel/issues/new "
+            "including this message if thread safety detection should work.\n"
+            f"{e}\n{tb}\n"
+            "Assuming this test is thread-safe."
+        )
+        warnings.warn(msg, RuntimeWarning)
         return False, None
 
-    if _is_source_indented(src):
-        # This test was extracted from a class or indented area, and Python needs
-        # to be told to expect indentation.
-        src = "if True:\n" + src
-    try:
-        tree = ast.parse(src)
-    except Exception:
-        return False, None
-
-    visitor = ThreadUnsafeNodeVisitor(
-        fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=level
-    )
-    visitor.visit(tree)
     return visitor.thread_unsafe, visitor.thread_unsafe_reason
 
 

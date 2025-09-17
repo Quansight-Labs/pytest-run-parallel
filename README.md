@@ -334,6 +334,10 @@ def test_same_execution_values(thread_comp):
     thread_comp(a=a, b=b, c=c)
 ```
 
+Some pytest-run-parallel fixtures will not work properly when
+requested by other fixtures. The following fixtures should ideally only
+be requested by tests: `thread_index`, `iteration_index`, `tmp_path`, `tmpdir`.
+
 ## Tracing
 
 If you run pytest with verbose output (e.g. by passing `-v` in your

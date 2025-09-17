@@ -134,6 +134,7 @@ class RunParallelPlugin:
         self.mark_ctypes_as_unsafe = config.option.mark_ctypes_as_unsafe
         self.mark_hypothesis_as_unsafe = config.option.mark_hypothesis_as_unsafe
         self.ignore_gil_enabled = config.option.ignore_gil_enabled
+        self.forever = config.option.forever
 
         skipped_functions = [
             x.split(".") for x in config.getini("thread_unsafe_functions")
@@ -182,6 +183,56 @@ class RunParallelPlugin:
             self.mark_ctypes_as_unsafe,
             self.mark_hypothesis_as_unsafe,
         )
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_runtestloop(self, session: pytest.Session):
+        """
+        Based on the default implementation in pytest, but also adds support
+        for running the tests in an endless loop.
+        """
+
+        if (
+            session.testsfailed
+            and not session.config.option.continue_on_collection_errors
+        ):
+            raise session.Interrupted(
+                "%d errors during collection" % session.testsfailed
+            )
+
+        if session.config.option.collectonly:
+            return True
+
+        number_of_items = len(session.items)
+        iter_number = 0
+        idx = 0
+        next_idx = idx + 1
+        if self.forever:
+            next_idx = next_idx % number_of_items
+
+        while idx < number_of_items:
+            if idx == 0 and self.forever:
+                print("\n\n", end="")
+                print("==========================================================")
+                print("You ran the test suite with 'forever' mode enabled.")
+                print(f"Running the tests again. This is iteration #{iter_number}.")
+                print("==========================================================")
+                iter_number += 1
+
+            item = session.items[idx]
+            nextitem = session.items[next_idx] if next_idx < number_of_items else None
+
+            item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
+            if session.shouldfail:
+                raise session.Failed(session.shouldfail)
+            if session.shouldstop:
+                raise session.Interrupted(session.shouldstop)
+
+            idx = next_idx
+            next_idx = idx + 1
+            if self.forever:
+                next_idx = next_idx % number_of_items
+
+        return True
 
     @pytest.hookimpl(trylast=True)
     def pytest_itemcollected(self, item):
@@ -432,6 +483,15 @@ def pytest_addoption(parser):
         help="Ignore the GIL becoming enabled in the middle of a test. By default, if the GIL is "
         "re-enabled at runtime, pytest will exit with a non-zero exit code. This option has no "
         "effect for non-free-threaded builds.",
+    )
+    group.addoption(
+        "--forever",
+        action="store_true",
+        dest="forever",
+        default=False,
+        help="Run the test loop forever (starting from the top when all the tests have been run), "
+        "until one crashes or the user explicitly stops the process with Ctrl-C. This is especially "
+        "helpful for hitting thread safety bugs that only occur rarely.",
     )
     parser.addini(
         "thread_unsafe_fixtures",

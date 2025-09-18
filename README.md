@@ -114,6 +114,15 @@ those fixtures are shared between threads.
     created for each iteration, so you may see issues with reused temporary
     directions when using `--iterations`.
 
+While pytest-run-parallel has special handling for the `tmp_path` and `tmpdir`
+fixtures to ensure that each thread has a private temporary directory, the
+plugin only does this if a test requests these fixtures directly. If another
+fixture requests `tmp_path` or `tmpdir`, then all threads will share a
+temporary directory in that fixture.
+
+The fixtures `thread_index` and `iteration_index` also should be requested
+directly by tests, and will return 0 when requested by other fixtures.
+
 **Note**: It's possible to specify `--parallel-threads=auto` or
 `pytest.mark.parallel_threads("auto")` which will let
 `pytest-run-parallel` choose the number of logical CPU cores available
@@ -333,10 +342,6 @@ def test_same_execution_values(thread_comp):
     # Check that the values for a, b, c are the same across tests
     thread_comp(a=a, b=b, c=c)
 ```
-
-Some pytest-run-parallel fixtures will not work properly when
-requested by other fixtures. The following fixtures should ideally only
-be requested by tests: `thread_index`, `iteration_index`, `tmp_path`, `tmpdir`.
 
 ## Tracing
 

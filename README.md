@@ -120,8 +120,8 @@ plugin only does this if a test requests these fixtures directly. If another
 fixture requests `tmp_path` or `tmpdir`, then all threads will share a
 temporary directory in that fixture.
 
-The fixtures `thread_index` and `iteration_index` also should be requested
-directly by tests, and will return 0 when requested by other fixtures.
+When using the fixtures `thread_index` and `iteration_index`, they should be
+requested directly by tests, and will return 0 when requested by other fixtures.
 
 **Note**: It's possible to specify `--parallel-threads=auto` or
 `pytest.mark.parallel_threads("auto")` which will let

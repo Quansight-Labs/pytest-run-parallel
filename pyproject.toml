@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pytest-run-parallel"
 description = "A simple pytest plugin to run tests concurrently"
-version = "0.6.2-dev"
+version = "0.7.0"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [

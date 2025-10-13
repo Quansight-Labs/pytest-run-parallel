@@ -11,29 +11,43 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: Run tests with ${{ matrix.python-version[0] }}
+    name: Run tests with ${{ matrix.python-version }}${{ matrix.with-psutil && ' (and psutil)' || '' }}
     strategy:
       fail-fast: false
       matrix:
-        python-version:
-          - ['3.9', '3.9']
-          - ['3.10', '3.10']
-          - ['3.11', '3.11']
-          - ['3.12', '3.12']
-          - ['3.13', '3.13']
-          - ['3.13t', '3.13t']
-          - ['3.14-dev', '3.14']
-          - ['3.14t-dev', '3.14t']
-          - ['pypy-3.9', 'pypy3.9']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.13t', '3.14', '3.14t']
+        with-psutil: [false]
+        include:
+          - python-version: '3.13'
+            with-psutil: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version[0] }}
+          python-version: ${{ matrix.python-version }}
 
-      - name: Install tox
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          activate-environment: true
+
+      - name: Install dependencies
         run: |
-          pip install tox
+          uv sync --locked --group test
 
-      - name: Run test suite (${{ matrix.python-version[0] }})
-        run: tox -e ${{ matrix.python-version[1] }}
+      - name: Install psutil (if needed)
+        if: matrix.with-psutil
+        run: |
+          uv pip install psutil
+
+      - name: Run tests with coverage
+        run: |
+          coverage run --source=pytest_run_parallel,tests -m pytest -W error -v
+
+      - name: Show coverage results
+        run: |
+          coverage report -m
+
+      - name: Check manifest
+        run: |
+          check-manifest -u -v

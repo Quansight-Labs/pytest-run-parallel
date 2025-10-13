@@ -33,6 +33,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
@@ -50,12 +51,16 @@ psutil = [
 ]
 
 [dependency-groups]
-dev = [
-    "pre-commit>=3.5.0",
+test = [
     "coverage[toml]>=7.5",
-    "pytest-order>=1.3.0",
+    "pytest-order",
+    "hypothesis>=6.135.33",
+    "check-manifest",
+]
+dev = [
+    { include-group = "test" },
+    "pre-commit>=3.5.0",
     "ruff>=0.7.2",
-    "tox>=4.23.2",
 ]
 
 [tool.ruff]
@@ -63,58 +68,3 @@ exclude = ["docs/conf.py"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]
-
-[tool.tox]
-env_list = ["py39", "py310", "py311", "py312", "py313", "py313t", "psutil", "pypy3", "ruff"]
-
-[tool.tox.env_run_base]
-deps = [
-    "pytest>=6.2.0",
-    "coverage[toml]>=7.5",
-    "pytest-order",
-    "check-manifest",
-    "hypothesis>=6.135.33",
-]
-commands = [
-    [
-    "coverage",
-    "run",
-    "--source=pytest_run_parallel,tests",
-    "-m",
-    "pytest",
-    "-W",
-    "error",
-    "-v",
-    "{posargs:tests}"
-    ],
-    [
-    "coverage",
-    "report",
-    "-m"
-    ],
-    [
-    "check-manifest",
-    "-u",
-    "-v",
-    ]
-]
-
-[tool.tox.env.ruff]
-skip_install = true
-deps = ["ruff"]
-commands = [["ruff", "check"]]
-
-[tool.tox.env.psutil]
-basepython = ["python3.13"]
-description = "run tests with psutil installed"
-extras = ["psutil"]
-
-
-[tool.tox.gh.python]
-"3.9" = ["py39"]
-"3.10" = ["py310"]
-"3.11" = ["py311"]
-"3.12" = ["py312"]
-"3.13" = ["py313", "psutil"]
-"3.13t" = ["py313t"]
-"pypy-3.9" = ["pypy3"]

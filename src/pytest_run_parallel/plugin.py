@@ -190,6 +190,10 @@ class RunParallelPlugin:
         Based on the default implementation in pytest, but also adds support
         for running the tests in an endless loop.
         """
+        if not self.forever:
+            # let the default pytest_runtestloop run if we don't need any
+            # customization for --forever.
+            return None
 
         if (
             session.testsfailed
@@ -205,12 +209,10 @@ class RunParallelPlugin:
         number_of_items = len(session.items)
         iter_number = 0
         idx = 0
-        next_idx = idx + 1
-        if self.forever:
-            next_idx = next_idx % number_of_items
+        next_idx = (idx + 1) % number_of_items
 
         while idx < number_of_items:
-            if idx == 0 and self.forever:
+            if idx == 0:
                 print("\n\n", end="")
                 print("==========================================================")
                 print("You ran the test suite with 'forever' mode enabled.")
@@ -228,9 +230,7 @@ class RunParallelPlugin:
                 raise session.Interrupted(session.shouldstop)
 
             idx = next_idx
-            next_idx = idx + 1
-            if self.forever:
-                next_idx = next_idx % number_of_items
+            next_idx = (idx + 1) % number_of_items
 
         return True
 
@@ -407,6 +407,14 @@ def thread_comp(num_parallel_threads):
 
 
 def pytest_configure(config):
+    if (
+        config.option.forever
+        and (n := getattr(config.option, "numprocesses", None)) is not None
+    ):
+        raise pytest.UsageError(
+            f"--forever from pytest-run-parallel is incompatible with `-n {n}` from pytest-xdist."
+        )
+
     config.addinivalue_line(
         "markers",
         "parallel_threads(n): run the given test function in parallel "
@@ -491,7 +499,8 @@ def pytest_addoption(parser):
         default=False,
         help="Run the test loop forever (starting from the top when all the tests have been run), "
         "until one crashes or the user explicitly stops the process with Ctrl-C. This is especially "
-        "helpful for hitting thread safety bugs that only occur rarely.",
+        "helpful for hitting thread safety bugs that only occur rarely. --forever is not compatible "
+        "with -n from pytest-xdist.",
     )
     parser.addini(
         "thread_unsafe_fixtures",

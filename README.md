@@ -84,7 +84,8 @@ those fixtures are shared between threads.
       the user explicitly ends the process with Ctrl-C. This is especially
       helpful when trying to reproduce thread safety bugs that might only
       occur rarely. Note that pytest's progress indicator will keep showing
-      100% forever after the first pass of the test suite.
+      100% forever after the first pass of the test suite. `forever` is not
+      compatible with `-n` from [pytest-xdist](https://github.com/pytest-dev/pytest-xdist).
     - `--ignore-gil-enabled` to ignore the RuntimeWarning generated
       when the GIL is enabled at runtime on the free-threaded build
       and run the tests despite the fact that the GIL is enabled.

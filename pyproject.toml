@@ -15,10 +15,11 @@ dependencies = [
 ]
 
 authors = [
-    { name = "Quansight Labs", email = "emargffoy@quansight.com" },
+    { name = "Edgar Margffoy", email = "emargffoy@quansight.com" },
 ]
 maintainers = [
-    { name = "Quansight Labs", email = "emargffoy@quansight.com" },
+    { name = "Lysandros Nikolaou", email = "lnikolaou@quansight.com" },
+    { name = "Nathan Goldbaum", email = "ngoldbaum@quansight.com" },
 ]
 license = {file = "LICENSE"}
 classifiers = [

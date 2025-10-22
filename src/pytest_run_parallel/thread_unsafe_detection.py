@@ -189,7 +189,7 @@ class ThreadUnsafeNodeVisitor(ast.NodeVisitor):
             if self._is_function_blocklisted(real_mod, node.attr):
                 self.thread_unsafe = True
                 self.thread_unsafe_reason = (
-                    "calls thread-unsafe function: " f"{real_mod}.{node.attr}"
+                    f"calls thread-unsafe function: {real_mod}.{node.attr}"
                 )
             elif self.level < 2:
                 self._recursive_analyze_attribute(node)

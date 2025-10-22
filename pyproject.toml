@@ -15,10 +15,11 @@ dependencies = [
 ]
 
 authors = [
-    { name = "Quansight Labs", email = "emargffoy@quansight.com" },
+    { name = "Edgar Margffoy" },
 ]
 maintainers = [
-    { name = "Quansight Labs", email = "emargffoy@quansight.com" },
+    { name = "Lysandros Nikolaou", email = "lnikolaou@quansight.com" },
+    { name = "Nathan Goldbaum", email = "ngoldbaum@quansight.com" },
 ]
 license = {file = "LICENSE"}
 classifiers = [
@@ -52,7 +53,7 @@ psutil = [
 
 [dependency-groups]
 test = [
-    "coverage[toml]>=7.5",
+    "coverage[toml]>=7.8",
     "pytest-order",
     "hypothesis>=6.135.33",
     "check-manifest",
@@ -68,3 +69,11 @@ exclude = ["docs/conf.py"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.pytest.ini_options]
+addopts="-W error -v"
+
+[tool.coverage.run]
+command_line = "-m pytest"
+source_pkgs = ["pytest_run_parallel"]
+source_dirs = ["tests"]

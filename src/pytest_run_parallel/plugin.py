@@ -495,8 +495,7 @@ def pytest_addoption(parser):
     )
     parser.addini(
         "thread_unsafe_fixtures",
-        "list of thread-unsafe fixture names that cause a test to "
-        "be run sequentially",
+        "list of thread-unsafe fixture names that cause a test to be run sequentially",
         type="linelist",
         default=[],
     )

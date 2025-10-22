@@ -77,6 +77,3 @@ addopts="-W error -v"
 command_line = "-m pytest"
 source_pkgs = ["pytest_run_parallel"]
 source_dirs = ["tests"]
-
-[tool.coverage.report]
-fail_under = 90

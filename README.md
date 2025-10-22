@@ -373,7 +373,9 @@ environment variable to 1.
 ## Contributing
 
 Contributions are very welcome. Tests can be run with
-`uv run pytest`, please ensure the coverage
+`uv run pytest`. If you want to run `pytest` with coverage enabled
+you can run `uv run coverage run` and then `uv run coverage report -m`
+to get the coverage report. Please ensure the coverage
 at least stays the same before you submit a pull request.
 
 ## License

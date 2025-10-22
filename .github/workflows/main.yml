@@ -42,7 +42,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          coverage run --source=pytest_run_parallel,tests -m pytest -W error -v
+          coverage run
 
       - name: Show coverage results
         run: |

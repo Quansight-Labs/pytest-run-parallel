@@ -698,3 +698,32 @@ def test_warning_gil_enabled_ignore_option(pytester):
     """)
     result = pytester.runpytest("-v", "--ignore-gil-enabled", "-W", "default")
     assert result.ret == 0
+
+
+def test_runs_with_xdist(pytester):
+    pytester.makepyfile("""
+    def test_parallel1(num_parallel_threads):
+        assert num_parallel_threads == 10
+
+    def test_parallel2(num_parallel_threads):
+        assert num_parallel_threads == 10
+    """)
+    result = pytester.runpytest("--parallel-threads=10", "-n", "2", "-v")
+    result.stdout.fnmatch_lines(["*test_parallel1*"])
+    result.stdout.fnmatch_lines(["*test_parallel2*"])
+    result.stdout.fnmatch_lines(["*All tests were run in parallel!*"])
+    assert result.ret == 0
+
+
+def test_forever_with_xdist_errors(pytester):
+    pytester.makepyfile("""
+    def test_example():
+        assert True
+    """)
+    result = pytester.runpytest("--forever", "-n", "2")
+    assert result.ret != 0
+    result.stderr.fnmatch_lines(
+        [
+            "*--forever from pytest-run-parallel is incompatible with `-n 2` from pytest-xdist*"
+        ]
+    )

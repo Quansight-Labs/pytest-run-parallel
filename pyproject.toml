@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 authors = [
-    { name = "Edgar Margffoy", email = "emargffoy@quansight.com" },
+    { name = "Edgar Margffoy" },
 ]
 maintainers = [
     { name = "Lysandros Nikolaou", email = "lnikolaou@quansight.com" },

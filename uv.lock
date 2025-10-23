@@ -476,7 +476,7 @@ wheels = [
 
 [[package]]
 name = "pytest-run-parallel"
-version = "0.7.1.dev0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
     { name = "pytest" },

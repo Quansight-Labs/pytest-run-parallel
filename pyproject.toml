@@ -21,7 +21,8 @@ maintainers = [
     { name = "Lysandros Nikolaou", email = "lnikolaou@quansight.com" },
     { name = "Nathan Goldbaum", email = "ngoldbaum@quansight.com" },
 ]
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
     "Framework :: Pytest",
     "Development Status :: 4 - Beta",
@@ -38,7 +39,6 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
-    "License :: OSI Approved :: MIT License",
 ]
 
 [project.urls]

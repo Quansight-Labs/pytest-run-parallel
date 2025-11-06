@@ -72,7 +72,7 @@ those fixtures are shared between threads.
        adding support for Python 3.14 to a library that already
        runs tests under pytest-run-parallel on Python 3.13 or
        older.
-    - `--mark-hypothesis-as-unsafe` to always skip runing tests that
+    - `--mark-hypothesis-as-unsafe` to always skip running tests that
       use [hypothesis](https://github.com/hypothesisworks/hypothesis).
       While newer version of Hypothesis are thread-safe, and versions
       which are not are automatically skipped by `pytest-run-parallel`,
@@ -134,7 +134,7 @@ back to running all tests single-threaded.
 ## Requirements
 
 `pytest-run-parallel` depends exclusively on `pytest`. Optionally
-intalling `psutil` will help with identifying the number of logical
+installing `psutil` will help with identifying the number of logical
 cores available to the testing process in systems where that's not
 possible with the Python stdlib.
 
@@ -315,7 +315,7 @@ def test_skip_if_parallel(num_parallel_threads):
     ...
 ```
 
-The `thread_index` and `iteration_index` fixtures are also avaliable, which enable
+The `thread_index` and `iteration_index` fixtures are also available, which enable
 tests to display different behavior between threads and iterations.
 
 ```python

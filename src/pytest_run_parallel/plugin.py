@@ -270,8 +270,7 @@ class RunParallelPlugin:
             raise ValueError("parallel-threads cannot be negative")
 
         if n_workers == 1 and parallel_threads_marker_used:
-            self._mark_test_thread_unsafe(
-                item, "test is marked as single-threaded")
+            self._mark_test_thread_unsafe(item, "test is marked as single-threaded")
 
         if n_workers > 1:
             thread_unsafe, reason = self._is_thread_unsafe(item)

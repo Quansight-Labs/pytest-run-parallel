@@ -11,6 +11,13 @@ def get_configured_num_workers(config):
     return n_workers
 
 
+def auto_or_int(val):
+    if val == "auto":
+        logical_cpus = get_logical_cpus()
+        return logical_cpus if logical_cpus is not None else 1
+    return int(val)
+
+
 def get_num_workers(item):
     n_workers = get_configured_num_workers(item.config)
     # TODO: deprecate in favor of parallel_threads_limit
@@ -18,15 +25,10 @@ def get_num_workers(item):
     marker = item.get_closest_marker("parallel_threads")
     if marker is not None:
         marker_used = True
-        val = marker.args[0]
-        if val == "auto":
-            logical_cpus = get_logical_cpus()
-            n_workers = logical_cpus if logical_cpus is not None else 1
-        else:
-            n_workers = int(val)
+        n_workers = auto_or_int(marker.args[0])
     limit_marker = item.get_closest_marker("parallel_threads_limit")
     if limit_marker is not None:
-        val = int(limit_marker.args[0])
+        val = auto_or_int(limit_marker.args[0])
         if val == 1:
             marker_used = True
         if n_workers > val:

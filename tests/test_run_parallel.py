@@ -382,13 +382,12 @@ def test_parallel_threads_limit_one_thread(pytester):
 
     # run pytest with the following cmd args
     result = pytester.runpytest("-v")
-
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_marker_threads_five PASSED*",
-            "*::test_marker_threads_two PASSED*",
-            "*::test_marker_threads_one PASSED*",
+            "*::test_marker_threads_five PASSED [[]???%[]]",
+            "*::test_marker_threads_two PASSED [[]???%[]]",
+            "*::test_marker_threads_one PASSED [[]thread-unsafe[]]*",
         ]
     )
 

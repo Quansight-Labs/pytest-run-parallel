@@ -270,7 +270,7 @@ class RunParallelPlugin:
             raise ValueError("parallel-threads cannot be negative")
 
         if n_workers == 1 and parallel_threads_marker_used:
-            self._mark_test_thread_unsafe(item, "uses the parallel_threads(1) marker")
+            self._mark_test_thread_unsafe(item, "test is marked as single-threaded")
 
         if n_workers > 1:
             thread_unsafe, reason = self._is_thread_unsafe(item)
@@ -418,7 +418,15 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers",
         "parallel_threads(n): run the given test function in parallel "
-        "using `n` threads.",
+        "using `n` threads. Note that if n is greater than 1, the test "
+        "run with this many threads even if the --parallel-threads "
+        "command-line argument is not passed. Use parallel_threads_limit "
+        "instead if you want to avoid this pitfall.",
+    )
+    config.addinivalue_line(
+        "markers",
+        "parallel_threads_limit(n): run the given test function in parallel "
+        "using a maximum of `n` threads.",
     )
     config.addinivalue_line(
         "markers",

@@ -305,6 +305,93 @@ def test_num_parallel_threads_fixture(pytester):
     )
 
 
+def test_parallel_threads_limit_fixture(pytester):
+    """Test that the num_parallel_threads fixture works as expected."""
+
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+
+        def test_should_yield_global_threads(num_parallel_threads):
+            assert num_parallel_threads == 10
+
+        @pytest.mark.parallel_threads_limit(20)
+        def test_unaffected_by_thread_limit(num_parallel_threads):
+            assert num_parallel_threads == 10
+
+        @pytest.mark.parallel_threads_limit(5)
+        def test_less_than_thread_limit(num_parallel_threads):
+            assert num_parallel_threads == 5
+
+        @pytest.mark.parallel_threads_limit(1)
+        def test_single_threaded(num_parallel_threads):
+            assert num_parallel_threads == 1
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_unaffected_by_thread_limit PARALLEL PASSED*",
+            "*::test_less_than_thread_limit PARALLEL PASSED*",
+            "*::test_single_threaded PASSED*",
+            "*1 test was not run in parallel because of use of "
+            "thread-unsafe functionality, to list the tests that "
+            "were not run in parallel, re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1"
+            " in your shell environment",
+        ]
+    )
+
+    # Re-run with verbose output
+    orig = os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "1"
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
+
+    result.stdout.fnmatch_lines(
+        ["*pytest-run-parallel report*", "*::test_single_threaded*"],
+        consecutive=True,
+    )
+
+
+def test_parallel_threads_limit_one_thread(pytester):
+    """Test that the num_parallel_threads fixture works as expected."""
+
+    # create a temporary pytest test module
+    pytester.makepyfile("""
+        import pytest
+
+        def test_should_yield_global_threads(num_parallel_threads):
+            assert num_parallel_threads == 1
+
+        @pytest.mark.parallel_threads_limit(5)
+        def test_marker_threads_five(num_parallel_threads):
+            assert num_parallel_threads == 1
+
+        @pytest.mark.parallel_threads_limit(2)
+        def test_marker_threads_two(num_parallel_threads):
+            assert num_parallel_threads == 1
+
+        @pytest.mark.parallel_threads_limit(1)
+        def test_marker_threads_one(num_parallel_threads):
+            assert num_parallel_threads == 1
+    """)
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest("-v")
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_marker_threads_five PASSED [[]???%[]]",
+            "*::test_marker_threads_two PASSED [[]???%[]]",
+            "*::test_marker_threads_one PASSED [[]thread-unsafe[]]*",
+        ]
+    )
+
+
 def test_iterations_marker_one_thread(pytester):
     # create a temporary pytest test module
     pytester.makepyfile("""

@@ -93,9 +93,15 @@ those fixtures are shared between threads.
       as errors.
 
 
-- Three corresponding markers:
-    - `pytest.mark.parallel_threads(n)` to mark a single test to run
-        in parallel in `n` threads
+- Four corresponding markers:
+    - `pytest.mark.parallel_threads_limit(n)` to mark a single test to
+        run in a maximum of `n` threads, even if the `--parallel-threads`
+        command-line argument is set to a higher value. This is useful if a
+        test uses resources that should be limited.
+    - `pytest.mark.parallel_threads(n)` to mark a test to always run in `n`
+        threads. Note that this implies that the test will be multi-threaded
+        just because pytest-run-parallel is installed, even if
+        `--parallel-threads` is not passed at the command-line.
     - `pytest.mark.thread_unsafe` to mark a single test to run in a
         single thread. It is equivalent to using
         `pytest.mark.parallel_threads(1)`

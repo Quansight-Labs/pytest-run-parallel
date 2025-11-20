@@ -835,6 +835,6 @@ def test_parallel_threads_deprecation(pytester):
         [
             "*::test_parallel_threads_one PASSED*",
             "*::test_parallel_threads_two PARALLEL PASSED*",
-            "*DeprecationWarning: Using the parallel_threads marker*",
+            "*pytest_run_parallel/plugin.py:*DeprecationWarning: Using the parallel_threads marker*",
         ]
     )

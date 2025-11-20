@@ -814,3 +814,27 @@ def test_forever_with_xdist_errors(pytester):
             "*--forever from pytest-run-parallel is incompatible with `-n 2` from pytest-xdist*"
         ]
     )
+
+
+def test_parallel_threads_deprecation(pytester):
+    pytester.makepyfile("""
+    import pytest
+
+    @pytest.mark.parallel_threads(1)
+    def test_parallel_threads_one():
+        assert True
+
+    @pytest.mark.parallel_threads(2)
+    def test_parallel_threads_two():
+        assert True
+    """)
+
+    result = pytester.runpytest("-v")
+    assert result.ret == 0
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_parallel_threads_one PASSED*",
+            "*::test_parallel_threads_two PARALLEL PASSED*",
+            "*pytest_run_parallel/plugin.py:*DeprecationWarning: Using the parallel_threads marker*",
+        ]
+    )

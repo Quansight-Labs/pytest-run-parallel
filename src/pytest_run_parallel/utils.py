@@ -1,3 +1,5 @@
+import warnings
+
 from pytest_run_parallel.cpu_detection import get_logical_cpus
 
 
@@ -26,6 +28,12 @@ def get_num_workers(item):
     if marker is not None:
         marker_used = True
         n_workers = auto_or_int(marker.args[0])
+        if n_workers > 1:
+            warnings.warn(
+                "Using the parallel_threads marker with a value greater than 1 is deprecated. Use parallel_threads_limit instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
     limit_marker = item.get_closest_marker("parallel_threads_limit")
     if limit_marker is not None:
         val = auto_or_int(limit_marker.args[0])

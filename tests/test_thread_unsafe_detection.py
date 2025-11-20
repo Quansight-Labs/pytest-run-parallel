@@ -789,3 +789,19 @@ def test_ast_parsing_error():
         identify_thread_unsafe_nodes(
             RaisesError(dummy_test), frozenset(), False, False, False
         )
+
+
+def test_detect_gc_collect(pytester):
+    pytester.makepyfile("""
+    import gc
+
+    def test_gc_collect(num_parallel_threads):
+        gc.collect()
+        assert num_parallel_threads == 1
+    """)
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            r"*::test_gc_collect PASSED*" r"calls thread-unsafe function: gc.collect*",
+        ]
+    )

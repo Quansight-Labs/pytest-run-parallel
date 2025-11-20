@@ -45,6 +45,7 @@ def construct_base_blocklist(unsafe_warnings, unsafe_ctypes):
         ("unittest.mock", "*", False),
         ("mock", "*", False),
         ("ctypes", "*", safe_ctypes),
+        ("gc", "collect", False),
     }
 
 

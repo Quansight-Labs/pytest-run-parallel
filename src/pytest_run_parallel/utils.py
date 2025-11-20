@@ -32,6 +32,7 @@ def get_num_workers(item):
             warnings.warn(
                 "Using the parallel_threads marker with a value greater than 1 is deprecated. Use parallel_threads_limit instead.",
                 DeprecationWarning,
+                stacklevel=2,
             )
     limit_marker = item.get_closest_marker("parallel_threads_limit")
     if limit_marker is not None:

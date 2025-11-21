@@ -844,4 +844,8 @@ def test_forever_without_selected_tests(pytester):
     pytester.makepyfile("")
     result = pytester.runpytest("--forever", "-v")
     assert result.ret == pytest.ExitCode.USAGE_ERROR
-    result.stderr.fnmatch_lines(["*Must have tests selected when passing --forever*"])
+    result.stderr.fnmatch_lines(
+        [
+            "*Test collection found zero tests when passing --forever. Are you sure you searched for the correct tests?*"
+        ]
+    )

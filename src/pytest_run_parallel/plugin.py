@@ -208,7 +208,9 @@ class RunParallelPlugin:
 
         number_of_items = len(session.items)
         if number_of_items == 0:
-            raise pytest.UsageError("Must have tests selected when passing --forever")
+            raise pytest.UsageError(
+                "Test collection found zero tests when passing --forever. Are you sure you searched for the correct tests?"
+            )
         iter_number = 0
         idx = 0
         next_idx = (idx + 1) % number_of_items

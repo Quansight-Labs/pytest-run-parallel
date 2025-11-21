@@ -207,6 +207,10 @@ class RunParallelPlugin:
             return True
 
         number_of_items = len(session.items)
+        if number_of_items == 0:
+            raise pytest.UsageError(
+                "Test collection found zero tests when passing --forever. Are you sure you searched for the correct tests?"
+            )
         iter_number = 0
         idx = 0
         next_idx = (idx + 1) % number_of_items

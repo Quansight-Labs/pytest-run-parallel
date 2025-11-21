@@ -838,3 +838,10 @@ def test_parallel_threads_deprecation(pytester):
             "*pytest_run_parallel/plugin.py:*DeprecationWarning: Using the parallel_threads marker*",
         ]
     )
+
+
+def test_forever_without_selected_tests(pytester):
+    pytester.makepyfile("")
+    result = pytester.runpytest("--forever", "-v")
+    assert result.ret == pytest.ExitCode.USAGE_ERROR
+    result.stderr.fnmatch_lines(["*Must have tests selected when passing --forever*"])

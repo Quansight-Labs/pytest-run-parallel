@@ -239,7 +239,11 @@ class RunParallelPlugin:
         return True
 
     @pytest.hookimpl(trylast=True)
-    def pytest_itemcollected(self, item):
+    def pytest_collection_finish(self, session):
+        for item in session.items:
+            self._handle_collected_item(item)
+
+    def _handle_collected_item(self, item):
         if not hasattr(item, "obj"):
             if not hasattr(item, "_parallel_custom_item"):
                 warnings.warn(

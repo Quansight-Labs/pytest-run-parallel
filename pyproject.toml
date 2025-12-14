@@ -54,6 +54,7 @@ psutil = [
 [dependency-groups]
 test = [
     "coverage[toml]>=7.8",
+    "pytest>=8.4.0",
     "pytest-order",
     "pytest-xdist",
     "hypothesis>=6.135.33",

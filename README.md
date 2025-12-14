@@ -177,8 +177,7 @@ The following functions and modules are known to be thread-unsafe and
 pytest-run-parallel will automatically skip running tests using them in
 parallel:
 
-- The pytest `capsys` fixture
-- The pytest `capsysbinary` fixture
+- The pytest `capsys`, `capteesys`, `capsysbinary`, `capfd` and `capfdbinary` fixtures
 - The pytest `monkeypath` fixture
 
 The following fixtures are known to be thread-unsafe on Python 3.13 and older,

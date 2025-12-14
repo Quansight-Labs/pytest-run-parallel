@@ -178,6 +178,7 @@ pytest-run-parallel will automatically skip running tests using them in
 parallel:
 
 - The pytest `capsys` fixture
+- The pytest `capsysbinary` fixture
 - The pytest `monkeypath` fixture
 
 The following fixtures are known to be thread-unsafe on Python 3.13 and older,

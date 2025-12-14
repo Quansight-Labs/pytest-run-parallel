@@ -234,6 +234,9 @@ def test_thread_unsafe_fixtures(pytester):
         def test_capsys(capsys, num_parallel_threads):
             assert num_parallel_threads == 1
 
+        def test_capsysbinary(capsysbinary, num_parallel_threads):
+            assert num_parallel_threads == 1
+
         def test_monkeypatch(monkeypatch, num_parallel_threads):
             assert num_parallel_threads == 1
 
@@ -264,6 +267,7 @@ def test_thread_unsafe_fixtures(pytester):
     result.stdout.fnmatch_lines(
         [
             "*::test_capsys PASSED *thread-unsafe*: uses thread-unsafe fixture*",
+            "*::test_capsysbinary PASSED *thread-unsafe*: uses thread-unsafe fixture*",
             f"*::test_recwarn {WARNINGS_PASS}PASSED*",
             "*::test_custom_fixture_skip PASSED *thread-unsafe*: uses thread-unsafe fixture*",
             "*::test_custom_fixture_skip_2 PASSED *thread-unsafe*: uses thread-unsafe fixture*",

@@ -746,9 +746,7 @@ def test_fail_warning_gil_enabled_during_execution(pytester):
     assert result.ret == 0
     result.parseoutcomes()["warnings"] == 1
 
-    result = pytester.runpytest(
-        "-v", "--parallel-threads=2", "-W", "default"
-    )
+    result = pytester.runpytest("-v", "--parallel-threads=2", "-W", "default")
     assert result.ret == 1
     result.stdout.fnmatch_lines(
         [
@@ -769,9 +767,7 @@ def test_fail_warning_gil_enabled_during_collection(pytester):
     def {test_name}():
         assert True
     """)
-    result = pytester.runpytest(
-        "-v", "-W", "default", "--parallel-threads=2"
-    )
+    result = pytester.runpytest("-v", "-W", "default", "--parallel-threads=2")
     assert result.ret == 1
     result.stdout.fnmatch_lines(
         [

@@ -51,6 +51,10 @@ def construct_base_blocklist(unsafe_warnings, unsafe_ctypes):
 
 THREAD_UNSAFE_FIXTURES = {
     "capsys": False,
+    "capteesys": False,
+    "capsysbinary": False,
+    "capfd": False,
+    "capfdbinary": False,
     "monkeypatch": False,
     "recwarn": WARNINGS_IS_THREADSAFE,
 }

@@ -385,9 +385,9 @@ def test_parallel_threads_limit_one_thread(pytester):
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
-            "*::test_marker_threads_five PASSED [[]???%[]]",
-            "*::test_marker_threads_two PASSED [[]???%[]]",
-            "*::test_marker_threads_one PASSED [[]thread-unsafe[]]*",
+            "*::test_marker_threads_five PASSED*[[]???%[]]",
+            "*::test_marker_threads_two PASSED*[[]???%[]]",
+            "*::test_marker_threads_one PASSED*[[]thread-unsafe[]]*",
         ]
     )
 
@@ -743,6 +743,12 @@ def test_fail_warning_gil_enabled_during_execution(pytester):
         )
     """)
     result = pytester.runpytest("-v", "-W", "default")
+    assert result.ret == 0
+    result.parseoutcomes()["warnings"] == 1
+
+    result = pytester.runpytest(
+        "-v", "--parallel-threads=2", "-W", "default"
+    )
     assert result.ret == 1
     result.stdout.fnmatch_lines(
         [
@@ -763,7 +769,9 @@ def test_fail_warning_gil_enabled_during_collection(pytester):
     def {test_name}():
         assert True
     """)
-    result = pytester.runpytest("-v", "-W", "default")
+    result = pytester.runpytest(
+        "-v", "-W", "default", "--parallel-threads=2"
+    )
     assert result.ret == 1
     result.stdout.fnmatch_lines(
         [
@@ -783,7 +791,9 @@ def test_warning_gil_enabled_ignore_option(pytester):
     def test_warning_gil_enabled_ignore_option():
         assert True
     """)
-    result = pytester.runpytest("-v", "--ignore-gil-enabled", "-W", "default")
+    result = pytester.runpytest(
+        "-v", "--ignore-gil-enabled", "-W", "default", "--parallel-threads=2"
+    )
     assert result.ret == 0
 
 

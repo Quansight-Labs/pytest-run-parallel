@@ -134,6 +134,8 @@ class RunParallelPlugin:
         self.mark_ctypes_as_unsafe = config.option.mark_ctypes_as_unsafe
         self.mark_hypothesis_as_unsafe = config.option.mark_hypothesis_as_unsafe
         self.ignore_gil_enabled = config.option.ignore_gil_enabled
+        if get_configured_num_workers(config) == 1:
+            self.ignore_gil_enabled = 1
         self.forever = config.option.forever
 
         skipped_functions = [

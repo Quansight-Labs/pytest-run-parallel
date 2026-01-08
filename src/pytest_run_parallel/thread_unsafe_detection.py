@@ -294,7 +294,7 @@ def _visit_node(visitor, fn):
 
 
 def _identify_thread_unsafe_nodes(
-        fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=0
+    fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=0
 ):
     if is_hypothesis_test(fn):
         if hypothesis_version < HYPOTHESIS_THREADSAFE_VERSION:
@@ -313,8 +313,7 @@ def _identify_thread_unsafe_nodes(
 
     try:
         visitor = ThreadUnsafeNodeVisitor(
-            fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis,
-            level=level
+            fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=level
         )
         with warnings.catch_warnings():
             # in case pytest is configured to treat warnings as errors.

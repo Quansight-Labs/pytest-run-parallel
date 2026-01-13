@@ -272,6 +272,27 @@ def _is_source_indented(src):
     return is_indented
 
 
+def _visit_node(visitor, fn):
+    try:
+        src = inspect.getsource(fn)
+    except (OSError, TypeError):
+        # if we can't get the source code (e.g. builtin function) then give up
+        # and don't attempt detection but default to assuming thread safety
+        return False, None
+    if _is_source_indented(src):
+        # This test was extracted from a class or indented area, and Python
+        # needs to be told to expect indentation.
+        src = "if True:\n" + src
+    try:
+        tree = ast.parse(src)
+    except (SyntaxError, ValueError):
+        # AST parsing failed because the AST is invalid. Who knows why but that
+        # means we can't run thread safety detection. Bail and assume
+        # thread-safe.
+        return False, None
+    visitor.visit(tree)
+
+
 def _identify_thread_unsafe_nodes(
     fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=0
 ):
@@ -294,24 +315,10 @@ def _identify_thread_unsafe_nodes(
         visitor = ThreadUnsafeNodeVisitor(
             fn, skip_set, unsafe_warnings, unsafe_ctypes, unsafe_hypothesis, level=level
         )
-        try:
-            src = inspect.getsource(fn)
-        except (OSError, TypeError):
-            # if we can't get the source code (e.g. builtin function)
-            # then give up and don't attempt detection but default to assuming
-            # thread safety
-            return False, None
-        if _is_source_indented(src):
-            # This test was extracted from a class or indented area, and Python needs
-            # to be told to expect indentation.
-            src = "if True:\n" + src
-        try:
-            tree = ast.parse(src)
-        except (SyntaxError, ValueError):
-            # AST parsing failed because the AST is invalid. Who knows why but that means
-            # we can't run thread safety detection. Bail and assume thread-safe.
-            return False, None
-        visitor.visit(tree)
+        with warnings.catch_warnings():
+            # in case pytest is configured to treat warnings as errors.
+            warnings.simplefilter("default")
+            _visit_node(visitor, fn)
     except Exception as e:
         tb = traceback.format_exc()
         msg = (

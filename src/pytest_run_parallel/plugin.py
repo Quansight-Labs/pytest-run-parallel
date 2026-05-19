@@ -254,7 +254,7 @@ class RunParallelPlugin:
             self._handle_collected_item(item)
 
     def _handle_collected_item(self, item):
-        if not hasattr(item, "obj"):
+        if getattr(item, "obj", None) is None:
             if not hasattr(item, "_parallel_custom_item"):
                 warnings.warn(
                     f"Encountered pytest item with type {type(item)} with no 'obj' "

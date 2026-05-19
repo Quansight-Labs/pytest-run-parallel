@@ -846,6 +846,92 @@ def test_parallel_threads_deprecation(pytester):
     )
 
 
+def test_force_parallel_threads_marker(pytester):
+    pytester.makepyfile("""
+        import pytest
+
+        def test_default_threads(num_parallel_threads):
+            assert num_parallel_threads == 1
+
+        @pytest.mark.force_parallel_threads(4)
+        def test_forced_four(num_parallel_threads):
+            assert num_parallel_threads == 4
+
+        @pytest.mark.force_parallel_threads(1)
+        def test_forced_one(num_parallel_threads):
+            assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("-v")
+    assert result.ret == 0
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_default_threads PASSED*",
+            "*::test_forced_four PARALLEL PASSED*",
+            "*::test_forced_one PASSED*",
+        ]
+    )
+
+
+def test_force_parallel_threads_overrides_cli(pytester):
+    pytester.makepyfile("""
+        import pytest
+
+        def test_uses_cli(num_parallel_threads):
+            assert num_parallel_threads == 10
+
+        @pytest.mark.force_parallel_threads(3)
+        def test_forced_overrides_cli(num_parallel_threads):
+            assert num_parallel_threads == 3
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    assert result.ret == 0
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_uses_cli PARALLEL PASSED*",
+            "*::test_forced_overrides_cli PARALLEL PASSED*",
+        ]
+    )
+
+
+def test_force_parallel_threads_overrides_limit(pytester):
+    pytester.makepyfile("""
+        import pytest
+
+        @pytest.mark.force_parallel_threads(5)
+        @pytest.mark.parallel_threads_limit(2)
+        def test_force_beats_limit(num_parallel_threads):
+            assert num_parallel_threads == 5
+    """)
+
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    assert result.ret == 0
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_force_beats_limit PARALLEL PASSED*",
+        ]
+    )
+
+
+def test_force_parallel_threads_no_deprecation_warning(pytester):
+    pytester.makepyfile("""
+        import pytest
+
+        @pytest.mark.force_parallel_threads(3)
+        def test_no_warning():
+            assert True
+    """)
+
+    result = pytester.runpytest("-v", "-W", "error::DeprecationWarning")
+    assert result.ret == 0
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_no_warning PARALLEL PASSED*",
+        ]
+    )
+
+
 def test_forever_without_selected_tests(pytester):
     pytester.makepyfile("")
     result = pytester.runpytest("--forever", "-v")

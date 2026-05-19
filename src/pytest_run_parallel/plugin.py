@@ -439,12 +439,20 @@ def pytest_configure(config):
         "using `n` threads. Note that if n is greater than 1, the test "
         "run with this many threads even if the --parallel-threads "
         "command-line argument is not passed. Use parallel_threads_limit "
-        "instead if you want to avoid this pitfall.",
+        "if you want a thread limit or force_parallel_threads if you "
+        "want to force a test to be multithreaded.",
     )
     config.addinivalue_line(
         "markers",
         "parallel_threads_limit(n): run the given test function in parallel "
         "using a maximum of `n` threads.",
+    )
+    config.addinivalue_line(
+        "markers",
+        "force_parallel_threads(n): force the given test function to run in "
+        "parallel using `n` threads, overriding the --parallel-threads "
+        "command-line argument and any parallel_threads_limit marker. Use "
+        "this to ensure a test always runs with a specific number of threads.",
     )
     config.addinivalue_line(
         "markers",

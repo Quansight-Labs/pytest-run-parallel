@@ -579,7 +579,10 @@ def test_skipif_marker_works(pytester):
     )
 
 
-def test_incompatible_test_item(pytester):
+def test_incompatible_test_item_no_obj_item(pytester):
+    """Doctests and other doctest-like custom pytest.Item subclasses are incompatibile
+    without an obj attribute on the Item. This shouldn't crash pytest-run-parallel
+    and the test should only run on one thread"""
     pytester.makeconftest("""
     import inspect
     import pytest
@@ -615,7 +618,10 @@ def test_incompatible_test_item(pytester):
     assert result.parseoutcomes()["warnings"] == 1
 
 
-def test_incompatible_test_item_2(pytester):
+def test_incompatible_test_item_obj_is_none(pytester):
+    """Doctests and other doctest-like custom pytest.Item subclasses are incompatibile
+    if the obj attribute is None. This shouldn't crash pytest-run-parallel
+    and the test should only run on one thread"""
     pytester.makeconftest("""
     import inspect
     import pytest
@@ -650,9 +656,12 @@ def test_incompatible_test_item_2(pytester):
         ]
     )
     assert result.parseoutcomes()["warnings"] == 1
+    result.stdout.fnmatch_lines(["*Encountered pytest item * with no 'obj' attribute*"])
 
 
 def test_known_incompatible_test_item_doesnt_warn(pytester):
+    """If the Item has a _parallel_custom_item attribute, pytest-run-parallel
+    shouldn't warn about the incompatibility"""
     pytester.makeconftest("""
     import inspect
     import pytest

@@ -22,7 +22,6 @@ def auto_or_int(val):
 
 def get_num_workers(item):
     n_workers = get_configured_num_workers(item.config)
-    # TODO: deprecate in favor of parallel_threads_limit
     marker_used = False
     marker = item.get_closest_marker("parallel_threads")
     if marker is not None:
@@ -30,7 +29,9 @@ def get_num_workers(item):
         n_workers = auto_or_int(marker.args[0])
         if n_workers > 1:
             warnings.warn(
-                "Using the parallel_threads marker with a value greater than 1 is deprecated. Use parallel_threads_limit instead.",
+                "Using the parallel_threads marker with a value greater than 1 is deprecated. "
+                "Use parallel_threads_limit if you want to set a thread limit or "
+                "force_parallel_threads if you want to force a test to be multithreaded.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -41,6 +42,12 @@ def get_num_workers(item):
             marker_used = True
         if n_workers > val:
             n_workers = val
+
+    force_marker = item.get_closest_marker("force_parallel_threads")
+    if force_marker is not None:
+        n_workers = auto_or_int(force_marker.args[0])
+        if n_workers == 1:
+            marker_used = True
 
     return n_workers, marker_used
 

@@ -93,12 +93,17 @@ those fixtures are shared between threads.
       as errors.
 
 
-- Four corresponding markers:
+- Five corresponding markers:
     - `pytest.mark.parallel_threads_limit(n)` to mark a single test to
         run in a maximum of `n` threads, even if the `--parallel-threads`
         command-line argument is set to a higher value. This is useful if a
         test uses resources that should be limited.
-    - `pytest.mark.parallel_threads(n)` to mark a test to always run in `n`
+    - `pytest.mark.force_parallel_threads(n)` to force a test to always run
+        in `n` threads, overriding both the `--parallel-threads` command-line
+        argument and any `parallel_threads_limit` marker. Use this when a
+        test must always be multi-threaded with a specific thread count.
+    - `pytest.mark.parallel_threads(n)` (deprecated when `n > 1` — use
+        `force_parallel_threads` instead) to mark a test to always run in `n`
         threads. Note that this implies that the test will be multi-threaded
         just because pytest-run-parallel is installed, even if
         `--parallel-threads` is not passed at the command-line.
@@ -130,8 +135,9 @@ temporary directory in that fixture.
 When using the fixtures `thread_index` and `iteration_index`, they should be
 requested directly by tests, and will return 0 when requested by other fixtures.
 
-**Note**: It's possible to specify `--parallel-threads=auto` or
-`pytest.mark.parallel_threads("auto")` which will let
+**Note**: It's possible to specify `--parallel-threads=auto`,
+`pytest.mark.force_parallel_threads("auto")`, or
+`pytest.mark.parallel_threads_limit("auto")` which will let
 `pytest-run-parallel` choose the number of logical CPU cores available
 to the testing process. If that cannot be determined, the number of
 physical CPU cores will be used. If that fails as well, it will fall
@@ -260,7 +266,7 @@ Note that using `pytest-xdist` and setting `iterations` to a number
 greater than one might cause tests to run even more times than intended.
 
 The other mode of operation occurs at the individual test level, via the
-`pytest.mark.parallel_threads` and `pytest.mark.iterations` markers:
+`pytest.mark.force_parallel_threads` and `pytest.mark.iterations` markers:
 
 ```python
 # test_file.py
@@ -270,7 +276,7 @@ import pytest
 def my_fixture():
     ...
 
-@pytest.mark.parallel_threads(2)
+@pytest.mark.force_parallel_threads(2)
 @pytest.mark.iterations(10)
 def test_something_1():
     # This test will be run in parallel using two concurrent threads
@@ -278,7 +284,7 @@ def test_something_1():
     ...
 
 @pytest.mark.parametrize('arg', [1, 2, 3])
-@pytest.mark.parallel_threads(3)
+@pytest.mark.force_parallel_threads(3)
 def test_fixture(my_fixture, arg):
     # pytest markers and fixtures are supported as well
     ...

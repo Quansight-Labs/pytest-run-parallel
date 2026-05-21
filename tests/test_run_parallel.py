@@ -580,7 +580,7 @@ def test_skipif_marker_works(pytester):
 
 
 def test_incompatible_test_item_no_obj_item(pytester):
-    """Doctests and other doctest-like custom pytest.Item subclasses are incompatibile
+    """Doctests and other doctest-like custom pytest.Item subclasses are incompatible
     without an obj attribute on the Item. This shouldn't crash pytest-run-parallel
     and the test should only run on one thread"""
     pytester.makeconftest("""
@@ -619,7 +619,7 @@ def test_incompatible_test_item_no_obj_item(pytester):
 
 
 def test_incompatible_test_item_obj_is_none(pytester):
-    """Doctests and other doctest-like custom pytest.Item subclasses are incompatibile
+    """Doctests and other doctest-like custom pytest.Item subclasses are incompatible
     if the obj attribute is None. This shouldn't crash pytest-run-parallel
     and the test should only run on one thread"""
     pytester.makeconftest("""

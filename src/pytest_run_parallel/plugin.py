@@ -254,7 +254,13 @@ class RunParallelPlugin:
             self._handle_collected_item(item)
 
     def _handle_collected_item(self, item):
-        if not hasattr(item, "obj"):
+        if isinstance(item, _pytest.doctest.DoctestItem):
+            self._mark_test_thread_unsafe(
+                item, "is a doctest (pytest-run-parallel does not support doctests)"
+            )
+            return
+
+        if getattr(item, "obj", None) is None:
             if not hasattr(item, "_parallel_custom_item"):
                 warnings.warn(
                     f"Encountered pytest item with type {type(item)} with no 'obj' "
@@ -270,12 +276,6 @@ class RunParallelPlugin:
                 )
             self._mark_test_thread_unsafe(
                 item, "is incompatible with pytest-run-parallel"
-            )
-            return
-
-        if isinstance(item, _pytest.doctest.DoctestItem):
-            self._mark_test_thread_unsafe(
-                item, "is a doctest (pytest-run-parallel does not support doctests)"
             )
             return
 

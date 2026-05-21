@@ -579,7 +579,10 @@ def test_skipif_marker_works(pytester):
     )
 
 
-def test_incompatible_test_item(pytester):
+def test_incompatible_test_item_no_obj_item(pytester):
+    """Doctests and other doctest-like custom pytest.Item subclasses are incompatible
+    without an obj attribute on the Item. This shouldn't crash pytest-run-parallel
+    and the test should only run on one thread"""
     pytester.makeconftest("""
     import inspect
     import pytest
@@ -615,7 +618,50 @@ def test_incompatible_test_item(pytester):
     assert result.parseoutcomes()["warnings"] == 1
 
 
+def test_incompatible_test_item_obj_is_none(pytester):
+    """Doctests and other doctest-like custom pytest.Item subclasses are incompatible
+    if the obj attribute is None. This shouldn't crash pytest-run-parallel
+    and the test should only run on one thread"""
+    pytester.makeconftest("""
+    import inspect
+    import pytest
+
+    class CustomItem(pytest.Item):
+        def __init__(self, name, parent=None, config=None, session=None, nodeid=None, function=None, **kwargs):
+            super().__init__(name, parent, config, session, nodeid, **kwargs)
+            self.function = function
+            self.obj = None
+
+        def runtest(self):
+            self.function()
+
+    @pytest.hookimpl(wrapper=True, trylast=True)
+    def pytest_pycollect_makeitem(collector, name: str, obj: object):
+        result = yield
+        if not inspect.isfunction(obj):
+            return result
+        return CustomItem.from_parent(name=name, parent=collector, function=obj)
+    """)
+
+    pytester.makepyfile("""
+    import pytest
+
+    def test_incompatible_item():
+        assert True
+    """)
+    result = pytester.runpytest("--parallel-threads=10", "-v", "-W", "default")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_incompatible_item PASSED*",
+        ]
+    )
+    assert result.parseoutcomes()["warnings"] == 1
+    result.stdout.fnmatch_lines(["*Encountered pytest item * with no 'obj' attribute*"])
+
+
 def test_known_incompatible_test_item_doesnt_warn(pytester):
+    """If the Item has a _parallel_custom_item attribute, pytest-run-parallel
+    shouldn't warn about the incompatibility"""
     pytester.makeconftest("""
     import inspect
     import pytest

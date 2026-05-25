@@ -1,4 +1,4 @@
-include tests/conftest.py
+recursive-include tests *.py
 exclude pytest_run_parallel.egg-info
 recursive-exclude * *.egg-info
 recursive-include docs *.bat

@@ -1,13 +1,11 @@
 import pytest
+from _helpers import passing_status
 
-parallel_threads = [
-    (1, "PASSED"),  # no parallel threads
-    ("auto", "PARALLEL PASSED"),  # parallel threads
-]
+parallel_threads = [1, "auto"]
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmp_path_is_empty(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel", parallel_threads)
+def test_tmp_path_is_empty(pytester: pytest.Pytester, parallel):
     # ensures tmp_path is empty for each thread
     # test from (gh-109)
     pytester.makepyfile("""
@@ -26,13 +24,13 @@ def test_tmp_path_is_empty(pytester: pytest.Pytester, parallel, passing):
 
     result.stdout.fnmatch_lines(
         [
-            f"*::test_tmp_path {passing}*",
+            f"*::test_tmp_path {passing_status(parallel)}*",
         ]
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmp_path_read_write(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel", parallel_threads)
+def test_tmp_path_read_write(pytester: pytest.Pytester, parallel):
     # ensures we can read/write in each tmp_path
     pytester.makepyfile("""
         def test_tmp_path(tmp_path):
@@ -47,13 +45,13 @@ def test_tmp_path_read_write(pytester: pytest.Pytester, parallel, passing):
 
     result.stdout.fnmatch_lines(
         [
-            f"*::test_tmp_path {passing}*",
+            f"*::test_tmp_path {passing_status(parallel)}*",
         ]
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmp_path_delete(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel", parallel_threads)
+def test_tmp_path_delete(pytester: pytest.Pytester, parallel):
     # ensures we can delete files in each tmp_path
     pytester.makepyfile("""
         def test_tmp_path(tmp_path):
@@ -73,13 +71,13 @@ def test_tmp_path_delete(pytester: pytest.Pytester, parallel, passing):
 
     result.stdout.fnmatch_lines(
         [
-            f"*::test_tmp_path {passing}*",
+            f"*::test_tmp_path {passing_status(parallel)}*",
         ]
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmpdir_is_empty(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel", parallel_threads)
+def test_tmpdir_is_empty(pytester: pytest.Pytester, parallel):
     # ensures tmpdir is empty for each thread
     pytester.makepyfile("""
         def test_tmpdir(tmpdir):
@@ -94,13 +92,13 @@ def test_tmpdir_is_empty(pytester: pytest.Pytester, parallel, passing):
 
     result.stdout.fnmatch_lines(
         [
-            f"*::test_tmpdir {passing}*",
+            f"*::test_tmpdir {passing_status(parallel)}*",
         ]
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmpdir_read_write(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel", parallel_threads)
+def test_tmpdir_read_write(pytester: pytest.Pytester, parallel):
     # ensures we can read/write in each tmpdir
     pytester.makepyfile("""
         def test_tmpdir(tmpdir):
@@ -115,13 +113,13 @@ def test_tmpdir_read_write(pytester: pytest.Pytester, parallel, passing):
 
     result.stdout.fnmatch_lines(
         [
-            f"*::test_tmpdir {passing}*",
+            f"*::test_tmpdir {passing_status(parallel)}*",
         ]
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmpdir_delete(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel", parallel_threads)
+def test_tmpdir_delete(pytester: pytest.Pytester, parallel):
     # ensures we can delete files in each tmpdir
     pytester.makepyfile("""
         def test_tmpdir(tmpdir):
@@ -140,13 +138,13 @@ def test_tmpdir_delete(pytester: pytest.Pytester, parallel, passing):
 
     result.stdout.fnmatch_lines(
         [
-            f"*::test_tmpdir {passing}*",
+            f"*::test_tmpdir {passing_status(parallel)}*",
         ]
     )
 
 
-@pytest.mark.parametrize("parallel, passing", parallel_threads)
-def test_tmp_path_tmpdir(pytester: pytest.Pytester, parallel, passing):
+@pytest.mark.parametrize("parallel", parallel_threads)
+def test_tmp_path_tmpdir(pytester: pytest.Pytester, parallel):
     # ensures tmp_path and tmpdir can be used at the same time
     pytester.makepyfile("""
         def test_both(tmp_path, tmpdir):
@@ -159,6 +157,6 @@ def test_tmp_path_tmpdir(pytester: pytest.Pytester, parallel, passing):
 
     result.stdout.fnmatch_lines(
         [
-            f"*::test_both {passing}*",
+            f"*::test_both {passing_status(parallel)}*",
         ]
     )

@@ -158,3 +158,50 @@ def test_auto_detect_cpu_count(
             "*::test_auto_detect_cpus PARALLEL PASSED*",
         ]
     )
+
+
+def test_auto_detect_single_cpu(
+    pytester: pytest.Pytester, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Regression test for issue #177: on a single-CPU system,
+    # --parallel-threads=auto must degrade gracefully to 1 thread without
+    # erroring out, and tests should still run (just sequentially).
+    monkeypatch.setattr("pytest_run_parallel.utils.get_logical_cpus", lambda: 1)
+
+    pytester.makepyfile("""
+        def test_single_cpu(num_parallel_threads):
+            assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=auto", "-v")
+
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_single_cpu PASSED*",
+        ]
+    )
+    assert "PARALLEL PASSED" not in result.stdout.str()
+    assert result.ret == 0
+
+
+def test_auto_detect_no_cpu_info(
+    pytester: pytest.Pytester, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Regression test for issue #177: when every CPU-detection path returns
+    # None, --parallel-threads=auto must still fall back to 1 rather than
+    # crashing.
+    monkeypatch.setattr("pytest_run_parallel.utils.get_logical_cpus", lambda: None)
+
+    pytester.makepyfile("""
+        def test_no_cpu_info(num_parallel_threads):
+            assert num_parallel_threads == 1
+    """)
+
+    result = pytester.runpytest("--parallel-threads=auto", "-v")
+
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_no_cpu_info PASSED*",
+        ]
+    )
+    assert result.ret == 0

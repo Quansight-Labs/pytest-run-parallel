@@ -1,4 +1,7 @@
 import pytest
+from _helpers import passing_status
+
+from pytest_run_parallel.cpu_detection import get_logical_cpus
 
 
 def test_thread_index_single_thread(pytester: pytest.Pytester) -> None:
@@ -26,12 +29,15 @@ def test_thread_index_num_parallel_threads(pytester: pytest.Pytester) -> None:
 
     result.stdout.fnmatch_lines(
         [
-            "*::test_thread_index PARALLEL PASSED*",
+            f"*::test_thread_index {passing_status('auto')}*",
         ]
     )
 
 
 def test_thread_index_changes_between_tests(pytester: pytest.Pytester) -> None:
+    if (get_logical_cpus() or 1) < 2:
+        pytest.skip("requires more than one CPU to compare thread indexes")
+
     # thread_comp is checking if the thread_indexes are equal between threads.
     # should fail since thread_indexes should not match.
     # test can be improved, since this cannot check if every thread has a
@@ -60,7 +66,7 @@ def test_iteration_index_single_iteration(pytester: pytest.Pytester) -> None:
 
     result.stdout.fnmatch_lines(
         [
-            "*::test_iteration_index PARALLEL PASSED*",
+            f"*::test_iteration_index {passing_status('auto')}*",
         ]
     )
 
@@ -92,6 +98,6 @@ def test_iteration_index_multi_iteration_mutli_thread(
 
     result.stdout.fnmatch_lines(
         [
-            "*::test_iteration_index PARALLEL PASSED*",
+            f"*::test_iteration_index {passing_status('auto')}*",
         ]
     )

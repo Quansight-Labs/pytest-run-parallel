@@ -51,3 +51,27 @@ jobs:
       - name: Check manifest
         run: |
           check-manifest -u -v
+
+  test-single-cpu:
+    runs-on: ubuntu-latest
+    name: Run tests on a simulated single-CPU system
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          activate-environment: true
+
+      - name: Install dependencies
+        run: |
+          uv sync --locked --group test
+
+      - name: Run tests pinned to a single CPU
+        # Regression coverage for issue #177: --parallel-threads=auto must
+        # degrade gracefully when only one CPU is available.
+        run: |
+          taskset -c 0 python -m pytest tests/

@@ -998,8 +998,4 @@ def test_xpass_not_treated_as_pass(pytester):
         assert True
     """)
     result = pytester.runpytest("--parallel-threads=10", "-v")
-    result.stdout.fnmatch_lines(
-        [
-            "*xpassed in*"
-        ]
-    )
+    result.stdout.fnmatch_lines(["*xpassed in*"])

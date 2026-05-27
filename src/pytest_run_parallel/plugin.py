@@ -312,7 +312,9 @@ class RunParallelPlugin:
     @pytest.hookimpl(tryfirst=True, wrapper=True)
     def pytest_report_teststatus(self, report, config):
         outcome = yield
-        if getattr(report, "when", None) != "call" or getattr(report, "keywords", {}).get('xfail', None):
+        if getattr(report, "when", None) != "call" or getattr(
+            report, "keywords", {}
+        ).get("xfail", None):
             return outcome
 
         if report.nodeid in self.run_in_parallel:

@@ -987,3 +987,19 @@ def test_forever_without_selected_tests(pytester):
             "*Test collection found zero tests when passing --forever. Are you sure you searched for the correct tests?*"
         ]
     )
+
+
+def test_xpass_not_treated_as_pass(pytester):
+    pytester.makepyfile("""
+    import pytest
+
+    @pytest.mark.xfail
+    def test_xpass():
+        assert True
+    """)
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*xpassed in*"
+        ]
+    )

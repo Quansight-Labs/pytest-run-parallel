@@ -128,7 +128,10 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
 
 class RunParallelPlugin:
     def __init__(self, config):
-        self.verbose = bool(int(os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")))
+        self.verbose = (
+            bool(int(os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")))
+            or config.option.verbose >= 1
+        )
         self.skip_thread_unsafe = config.option.skip_thread_unsafe
         self.mark_warnings_as_unsafe = config.option.mark_warnings_as_unsafe
         self.mark_ctypes_as_unsafe = config.option.mark_ctypes_as_unsafe
@@ -371,7 +374,7 @@ class RunParallelPlugin:
                 f"{num} {test} {self.skipped_or_not_parallel(plural=num > 1)}"
                 " because of use of thread-unsafe functionality, "
                 f"to list the tests that {self.skipped_or_not_parallel(plural=True)}, re-run "
-                "while setting PYTEST_RUN_PARALLEL_VERBOSE=1 "
+                "with -v or while setting PYTEST_RUN_PARALLEL_VERBOSE=1 "
                 "in your shell environment"
             )
         else:

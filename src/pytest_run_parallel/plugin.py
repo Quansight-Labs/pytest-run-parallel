@@ -346,7 +346,7 @@ class RunParallelPlugin:
         for nodeid, reason in self.thread_unsafe.items():
             if reason is not None:
                 terminalreporter.line(
-                    f"{nodeid} {self.skipped_or_not_parallel(plural=False)} because it {reason}"
+                    f"{nodeid} {self.skipped_or_not_parallel(plural=False)}: {reason}"
                 )
             else:
                 terminalreporter.line(nodeid)

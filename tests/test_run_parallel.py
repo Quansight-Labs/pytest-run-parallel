@@ -760,9 +760,7 @@ def test_report_visibility_respects_verbosity(pytester):
         ],
         consecutive=True,
     )
-    result.stdout.no_fnmatch_line(
-        "*because of use of thread-unsafe functionality*"
-    )
+    result.stdout.no_fnmatch_line("*because of use of thread-unsafe functionality*")
 
     # In quiet mode (-q) the report is suppressed entirely.
     result = pytester.runpytest("--parallel-threads=10", "-q")

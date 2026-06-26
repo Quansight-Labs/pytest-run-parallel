@@ -285,18 +285,16 @@ def test_num_parallel_threads_fixture(pytester):
             "*::test_should_yield_global_threads PARALLEL PASSED*",
             "*::test_should_yield_marker_threads PARALLEL PASSED*",
             "*::test_single_threaded PASSED*",
-            "*1 test was not run in parallel because of use of "
-            "thread-unsafe functionality, to list the tests that "
-            "were not run in parallel, re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1"
-            " in your shell environment",
+            "*::test_single_threaded was not run in parallel:*",
         ]
     )
 
-    # Re-run with verbose output
+    # The detailed report is also produced via the environment variable alone,
+    # without raising pytest's verbosity.
     orig = os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")
     os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "1"
 
-    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result = pytester.runpytest("--parallel-threads=10")
     os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
 
     result.stdout.fnmatch_lines(
@@ -337,18 +335,16 @@ def test_parallel_threads_limit_fixture(pytester):
             "*::test_unaffected_by_thread_limit PARALLEL PASSED*",
             "*::test_less_than_thread_limit PARALLEL PASSED*",
             "*::test_single_threaded PASSED*",
-            "*1 test was not run in parallel because of use of "
-            "thread-unsafe functionality, to list the tests that "
-            "were not run in parallel, re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1"
-            " in your shell environment",
+            "*::test_single_threaded was not run in parallel:*",
         ]
     )
 
-    # Re-run with verbose output
+    # The detailed report is also produced via the environment variable alone,
+    # without raising pytest's verbosity.
     orig = os.environ.get("PYTEST_RUN_PARALLEL_VERBOSE", "0")
     os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = "1"
 
-    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result = pytester.runpytest("--parallel-threads=10")
     os.environ["PYTEST_RUN_PARALLEL_VERBOSE"] = orig
 
     result.stdout.fnmatch_lines(
@@ -733,26 +729,44 @@ def test_all_tests_in_parallel(pytester):
 
 def test_report_visibility_respects_verbosity(pytester):
     pytester.makepyfile("""
-    def test_parallel_1(num_parallel_threads):
+    import pytest
+
+    def test_parallel(num_parallel_threads):
         assert num_parallel_threads == 10
 
-    def test_parallel_2(num_parallel_threads):
-        assert num_parallel_threads == 10
+    @pytest.mark.parallel_threads(1)
+    def test_single_threaded(num_parallel_threads):
+        assert num_parallel_threads == 1
     """)
 
-    # At the default verbosity the report is shown.
+    # At the default verbosity the report shows the condensed summary that
+    # points users at -v (or the environment variable) for the full listing.
     result = pytester.runpytest("--parallel-threads=10")
     result.stdout.fnmatch_lines(
         [
             "*pytest-run-parallel report*",
-            "*All tests were run in parallel! 🎉*",
+            "*1 test was not run in parallel because of use of "
+            "thread-unsafe functionality*",
         ]
+    )
+    result.stdout.no_fnmatch_line("*::test_single_threaded was not run in parallel*")
+
+    # With -v the report lists each test instead of the condensed summary.
+    result = pytester.runpytest("--parallel-threads=10", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*pytest-run-parallel report*",
+            "*::test_single_threaded was not run in parallel:*",
+        ],
+        consecutive=True,
+    )
+    result.stdout.no_fnmatch_line(
+        "*because of use of thread-unsafe functionality*"
     )
 
     # In quiet mode (-q) the report is suppressed entirely.
     result = pytester.runpytest("--parallel-threads=10", "-q")
     result.stdout.no_fnmatch_line("*pytest-run-parallel report*")
-    result.stdout.no_fnmatch_line("*All tests were run in parallel! 🎉*")
 
 
 def test_doctests_marked_thread_unsafe(pytester):

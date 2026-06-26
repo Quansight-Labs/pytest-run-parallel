@@ -42,7 +42,9 @@ def test_thread_unsafe_marker(pytester):
         [
             "*::test_should_run_single PASSED*",
             "*::test_should_run_single_2 PASSED *thread-unsafe*: this is thread-unsafe*",
-            "*2 tests were not run in parallel*",
+            "*::test_should_run_single was not run in parallel:*",
+            "*::test_should_run_single_2 was not run in parallel:*"
+            "this is thread-unsafe*",
         ]
     )
 
@@ -55,7 +57,8 @@ def test_thread_unsafe_marker(pytester):
         [
             "*::test_should_run_single SKIPPED*",
             "*::test_should_run_single_2 SKIPPED*",
-            "*2 tests were skipped*",
+            "*::test_should_run_single was skipped:*",
+            "*::test_should_run_single_2 was skipped:*this is thread-unsafe*",
         ]
     )
 
@@ -357,12 +360,12 @@ def test_thread_unsafe_function_attr(pytester):
         ]
     )
 
+    # at the default verbosity the report shows the condensed count message
+    result = pytester.runpytest("--parallel-threads=10")
     result.stdout.fnmatch_lines(
         [
             "*3 tests were not run in parallel because of use of thread-unsafe "
-            "functionality, to list the tests that were not run in parallel, "
-            "re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1 in your "
-            "shell environment*",
+            "functionality*",
         ]
     )
 

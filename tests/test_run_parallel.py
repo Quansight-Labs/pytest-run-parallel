@@ -731,6 +731,30 @@ def test_all_tests_in_parallel(pytester):
     )
 
 
+def test_report_visibility_respects_verbosity(pytester):
+    pytester.makepyfile("""
+    def test_parallel_1(num_parallel_threads):
+        assert num_parallel_threads == 10
+
+    def test_parallel_2(num_parallel_threads):
+        assert num_parallel_threads == 10
+    """)
+
+    # At the default verbosity the report is shown.
+    result = pytester.runpytest("--parallel-threads=10")
+    result.stdout.fnmatch_lines(
+        [
+            "*pytest-run-parallel report*",
+            "*All tests were run in parallel! 🎉*",
+        ]
+    )
+
+    # In quiet mode (-q) the report is suppressed entirely.
+    result = pytester.runpytest("--parallel-threads=10", "-q")
+    result.stdout.no_fnmatch_line("*pytest-run-parallel report*")
+    result.stdout.no_fnmatch_line("*All tests were run in parallel! 🎉*")
+
+
 def test_doctests_marked_thread_unsafe(pytester):
     pytester.makepyfile("""
     def test_parallel(num_parallel_threads):

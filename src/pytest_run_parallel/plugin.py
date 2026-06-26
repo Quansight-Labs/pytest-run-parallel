@@ -354,7 +354,7 @@ class RunParallelPlugin:
         if not enabled:
             return
 
-        terminalreporter.section("pytest-run-parallel report", "*")
+        terminalreporter.section("pytest-run-parallel report", "=")
 
         if self.verbose and self.thread_unsafe:
             self._write_reasons_summary(terminalreporter)

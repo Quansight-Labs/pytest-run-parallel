@@ -379,9 +379,11 @@ tests/test_kx.py ·....·
 
 Only the first and last tests are run in parallel.
 
-In order to list the tests that were marked as thread-unsafe and were
-not executed in parallel, you can set the `PYTEST_RUN_PARALLEL_VERBOSE`
-environment variable to 1.
+In order to list the individual tests that were marked as thread-unsafe and
+were not executed in parallel, run pytest with `-v` (or higher). You can get
+the same listing without raising pytest's verbosity by setting the
+`PYTEST_RUN_PARALLEL_VERBOSE` environment variable to 1. The summary report is
+shown by default and is suppressed when running quietly with `-q`.
 
 ## Contributing
 

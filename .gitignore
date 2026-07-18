@@ -181,3 +181,6 @@ target/
 
 # pyenv
 .python-version
+
+# Git worktrees
+.worktrees/

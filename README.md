@@ -135,6 +135,44 @@ temporary directory in that fixture.
 When using the fixtures `thread_index` and `iteration_index`, they should be
 requested directly by tests, and will return 0 when requested by other fixtures.
 
+### Extending per-thread fixture kwargs
+
+When pytest-run-parallel wraps tests for multiple threads and/or iterations, it
+calls `pytest_run_parallel_get_wrap_fixtures(n_workers)` once per session with
+the configured `--parallel-threads` value. Each implementation may return
+`None` (skip) or a dict mapping fixture names to transform callables:
+
+```python
+def transform(fixturevalue, *, thread_index):
+    return fixturevalue
+```
+
+Transforms may also be generators: the yielded value is used as the fixture
+value, and after the test body the generator is resumed for teardown. When
+several generator transforms run for a worker/iteration, teardowns run in
+reverse setup order.
+
+Per test, only transforms for fixtures requested directly by that test are
+kept. The plugin shallow-copies the fixture kwargs, then applies those
+transforms in order, chaining values. Dicts from multiple hookimpls are merged
+by appending transforms per fixture name (the same name registered twice runs
+both). The built-in implementation wraps `tmp_path` and `tmpdir` (when
+configured `n_workers > 1`). `thread_index` and `iteration_index` are set
+directly by the plugin.
+
+Example `conftest.py`:
+
+```python
+import pytest
+
+@pytest.hookimpl
+def pytest_run_parallel_get_wrap_fixtures(n_workers):
+    def transform_db(value, *, thread_index):
+        return value.for_thread(thread_index)
+
+    return {"db": transform_db}
+```
+
 **Note**: It's possible to specify `--parallel-threads=auto`,
 `pytest.mark.force_parallel_threads("auto")`, or
 `pytest.mark.parallel_threads_limit("auto")` which will let

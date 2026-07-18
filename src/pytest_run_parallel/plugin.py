@@ -38,9 +38,7 @@ GIL_ENABLED_ERROR_TEXT = (
 def _get_wrap_fixtures(config):
     """Merge hook results into name -> [transform, ...], preserving call order."""
     n_workers = get_configured_num_workers(config)
-    results = config.hook.pytest_run_parallel_get_wrap_fixtures(
-        n_workers=n_workers
-    )
+    results = config.hook.pytest_run_parallel_get_wrap_fixtures(n_workers=n_workers)
     wrap_fixtures = {}
     for result in results:
         if not result:
@@ -55,7 +53,11 @@ def _get_wrap_fixtures(config):
 def _wrap_fixtures_for_item(wrap_fixtures, item):
     """Per-test subset of the global wrap-fixtures map."""
     fixtures = getattr(item, "fixturenames", ())
-    return {name: transforms for name, transforms in wrap_fixtures.items() if name in fixtures}
+    return {
+        name: transforms
+        for name, transforms in wrap_fixtures.items()
+        if name in fixtures
+    }
 
 
 def _run_wrap_fixture_teardowns(teardowns):
@@ -74,7 +76,9 @@ def _run_wrap_fixture_teardowns(teardowns):
         raise errors[0]
 
 
-def _apply_wrap_fixtures(kwargs, wrap_fixtures, *, thread_index, iteration_index, n_workers):
+def _apply_wrap_fixtures(
+    kwargs, wrap_fixtures, *, thread_index, iteration_index, n_workers
+):
     worker_kwargs = dict(kwargs)
     if "iteration_index" in worker_kwargs:
         worker_kwargs["iteration_index"] = iteration_index

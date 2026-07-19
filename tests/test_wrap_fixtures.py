@@ -94,7 +94,8 @@ def test_wrap_fixtures_hook_chains_duplicate_fixture_transforms(
             return []
 
         def test_steps(steps):
-            # Later hookimpls are inserted first (most-specific runs first).
+            # Hookimpls called first by pluggy (tryfirst, or a more specific
+            # conftest) have their transforms applied last, so they win.
             assert steps == ["second", "first"]
         """
     )
@@ -151,7 +152,8 @@ def test_wrap_fixtures_hook_generator_teardown_reverse_order(
         def test_teardown_order():
             from conftest import log
 
-            # Later hookimpls run first; teardowns still reverse of setup.
+            # Hookimpls called last are applied first. Teardowns run in
+            # reverse of setup order.
             for thread_index in (0, 1):
                 setup_inner = log.index(f"setup-inner-{thread_index}")
                 setup_outer = log.index(f"setup-outer-{thread_index}")

@@ -44,8 +44,9 @@ def _get_wrap_fixtures(config):
         if not result:
             continue
         for name, transform in result.items():
-            # insert at beginning, because pluggi will find the most
-            # specific one last (in practice this should not matter).
+            # pluggy calls the most specific hookimpl first, so insert at
+            # the beginning to apply its transform last, letting it wrap or
+            # override the transforms of less specific hookimpls.
             wrap_fixtures.setdefault(name, []).insert(0, transform)
     return wrap_fixtures
 

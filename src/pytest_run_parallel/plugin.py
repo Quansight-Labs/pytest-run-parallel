@@ -553,11 +553,13 @@ def pytest_run_parallel_get_wrap_fixtures(n_workers):
     }
 
 
-def pytest_configure(config):
+def pytest_addhooks(pluginmanager):
     from pytest_run_parallel import hooks as run_parallel_hooks
 
-    config.pluginmanager.add_hookspecs(run_parallel_hooks)
+    pluginmanager.add_hookspecs(run_parallel_hooks)
 
+
+def pytest_configure(config):
     if (
         config.option.forever
         and (n := getattr(config.option, "numprocesses", None)) is not None

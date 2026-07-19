@@ -222,3 +222,168 @@ def test_wrap_fixtures_skipped_when_configured_workers_is_one(
     )
     result = pytester.runpytest("--parallel-threads=1", "--iterations=2", "-v")
     result.assert_outcomes(passed=1)
+
+
+def test_wrap_fixtures_transform_failure_fails_test_without_hanging(
+    pytester: pytest.Pytester,
+) -> None:
+    """A transform error must abort the barrier instead of deadlocking."""
+    pytester.makeconftest(
+        """
+        import pytest
+
+        @pytest.hookimpl
+        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+            def bad(value, *, thread_index):
+                if thread_index == 1:
+                    raise RuntimeError("transform failed in thread 1")
+                return value
+
+            return {"resource": bad}
+        """
+    )
+    pytester.makepyfile(
+        """
+        import pytest
+
+        @pytest.fixture
+        def resource():
+            return "base"
+
+        def test_resource(resource):
+            pass
+        """
+    )
+    result = pytester.runpytest("--parallel-threads=4", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_resource PARALLEL FAILED*",
+            "*transform failed in thread 1*",
+        ]
+    )
+
+
+def test_wrap_fixtures_teardown_runs_when_test_fails(
+    pytester: pytest.Pytester,
+) -> None:
+    pytester.makeconftest(
+        """
+        import threading
+
+        import pytest
+
+        lock = threading.Lock()
+        counts = {"teardown": 0}
+
+        @pytest.hookimpl
+        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+            def transform(value, *, thread_index):
+                yield value
+                with lock:
+                    counts["teardown"] += 1
+
+            return {"resource": transform}
+
+        def pytest_terminal_summary(terminalreporter, exitstatus, config):
+            terminalreporter.line(f"teardown={counts['teardown']}")
+        """
+    )
+    pytester.makepyfile(
+        """
+        import pytest
+
+        @pytest.fixture
+        def resource():
+            return "base"
+
+        def test_fails(resource):
+            raise ValueError("boom")
+        """
+    )
+    result = pytester.runpytest("--parallel-threads=2", "-v")
+    result.stdout.fnmatch_lines(
+        [
+            "*::test_fails PARALLEL FAILED*",
+            "teardown=2",
+        ]
+    )
+
+
+def test_wrap_fixtures_most_specific_conftest_wins(
+    pytester: pytest.Pytester,
+) -> None:
+    pytester.makeconftest(
+        """
+        import pytest
+
+        @pytest.fixture
+        def resource():
+            return "base"
+
+        @pytest.hookimpl
+        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+            def transform(value, *, thread_index):
+                return "root"
+
+            return {"resource": transform}
+        """
+    )
+    pytester.makepyfile(
+        **{
+            "sub/conftest": """
+                import pytest
+
+                @pytest.hookimpl
+                def pytest_run_parallel_get_wrap_fixtures(n_workers):
+                    def transform(value, *, thread_index):
+                        return "sub"
+
+                    return {"resource": transform}
+            """,
+            "sub/test_order": """
+                def test_resource(resource):
+                    assert resource == "sub"
+            """,
+        }
+    )
+    result = pytester.runpytest("--parallel-threads=2", "-v")
+    result.stdout.fnmatch_lines([f"*::test_resource {passing_status(2)}*"])
+
+
+def test_wrap_fixtures_hook_not_called_when_not_wrapped(
+    pytester: pytest.Pytester,
+) -> None:
+    pytester.makeconftest(
+        """
+        import pytest
+
+        @pytest.hookimpl
+        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+            raise RuntimeError("hook should not be called")
+        """
+    )
+    pytester.makepyfile(
+        """
+        def test_ok():
+            pass
+        """
+    )
+    result = pytester.runpytest("--parallel-threads=1", "-v")
+    result.stdout.fnmatch_lines(["*::test_ok PASSED*"])
+
+
+def test_wrap_fixtures_forced_parallel_gets_tmp_path_isolation(
+    pytester: pytest.Pytester,
+) -> None:
+    """Built-ins must use the per-test thread count, not the CLI value"""
+    pytester.makepyfile(
+        """
+        import pytest
+
+        @pytest.mark.force_parallel_threads(2)
+        def test_tmp(tmp_path, thread_index):
+            assert tmp_path.name == f"thread_{thread_index}"
+        """
+    )
+    result = pytester.runpytest("-v")
+    result.stdout.fnmatch_lines(["*::test_tmp PARALLEL PASSED*"])

@@ -35,9 +35,8 @@ GIL_ENABLED_ERROR_TEXT = (
 )
 
 
-def _get_wrap_fixtures(config):
-    """Merge hook results into name -> [transform, ...], preserving call order."""
-    n_workers = get_configured_num_workers(config)
+def _get_wrap_fixtures(config, n_workers):
+    """Merge hook results into name -> [transform, ...]."""
     results = config.hook.pytest_run_parallel_get_wrap_fixtures(n_workers=n_workers)
     wrap_fixtures = {}
     for result in results:
@@ -101,7 +100,12 @@ def _apply_wrap_fixtures(
                     value = result
             worker_kwargs[name] = value
     except BaseException:
-        _run_wrap_fixture_teardowns(teardowns)
+        try:
+            _run_wrap_fixture_teardowns(teardowns)
+        except Exception:
+            # Surface the original transform error, not one raised while
+            # unwinding the transforms that had already run.
+            pass
         raise
     return worker_kwargs, teardowns
 
@@ -134,27 +138,40 @@ def wrap_function_parallel(fn, n_workers, n_iterations, wrap_fixtures=None):
                 thread_index, args = args[0], args[1:]
 
                 for iteration_index in range(n_iterations):
-                    worker_kwargs, teardowns = _apply_wrap_fixtures(
-                        kwargs,
-                        wrap_fixtures,
-                        thread_index=thread_index,
-                        iteration_index=iteration_index,
-                        n_workers=n_workers,
-                    )
-
-                    barrier.wait()
                     try:
-                        fn(*args, **worker_kwargs)
-                    except Warning:
-                        pass
+                        worker_kwargs, teardowns = _apply_wrap_fixtures(
+                            kwargs,
+                            wrap_fixtures,
+                            thread_index=thread_index,
+                            iteration_index=iteration_index,
+                            n_workers=n_workers,
+                        )
                     except Exception as e:
                         errors.append(e)
-                    except _pytest.outcomes.Skipped as s:
-                        nonlocal skip
-                        skip = s.msg
-                    except _pytest.outcomes.Failed as f:
-                        nonlocal failed
-                        failed = f
+                        # Break the barrier so the other threads do not wait
+                        # forever for this one.
+                        barrier.abort()
+                        return
+
+                    try:
+                        try:
+                            barrier.wait()
+                        except threading.BrokenBarrierError:
+                            # Another thread failed during startup or while
+                            # applying its fixture transforms.
+                            return
+                        try:
+                            fn(*args, **worker_kwargs)
+                        except Warning:
+                            pass
+                        except Exception as e:
+                            errors.append(e)
+                        except _pytest.outcomes.Skipped as s:
+                            nonlocal skip
+                            skip = s.msg
+                        except _pytest.outcomes.Failed as f:
+                            nonlocal failed
+                            failed = f
                     finally:
                         try:
                             _run_wrap_fixture_teardowns(teardowns)
@@ -220,7 +237,7 @@ class RunParallelPlugin:
         self.unsafe_fixtures = construct_thread_unsafe_fixtures(config)
         self.thread_unsafe = {}
         self.run_in_parallel = {}
-        self.wrap_fixtures = None
+        self._wrap_fixtures_cache = {}
 
     def skipped_or_not_parallel(self, *, plural):
         if plural:
@@ -323,9 +340,17 @@ class RunParallelPlugin:
     #   is called
     @pytest.hookimpl(tryfirst=True)
     def pytest_collection_finish(self, session):
-        self.wrap_fixtures = _get_wrap_fixtures(session.config)
         for item in session.items:
             self._handle_collected_item(item)
+
+    def _get_wrap_fixtures_cached(self, config, n_workers):
+        # The hook is called with the thread count each wrapped test will
+        # actually use, which markers like force_parallel_threads may set
+        # to a different value than the --parallel-threads option. Cache
+        # per distinct count so the hook runs once per count, not per test.
+        if n_workers not in self._wrap_fixtures_cache:
+            self._wrap_fixtures_cache[n_workers] = _get_wrap_fixtures(config, n_workers)
+        return self._wrap_fixtures_cache[n_workers]
 
     def _handle_collected_item(self, item):
         if isinstance(item, _pytest.doctest.DoctestItem):
@@ -374,7 +399,9 @@ class RunParallelPlugin:
 
         if n_workers > 1 or n_iterations > 1:
             original_globals = item.obj.__globals__
-            wrap_fixtures = _wrap_fixtures_for_item(self.wrap_fixtures, item)
+            wrap_fixtures = _wrap_fixtures_for_item(
+                self._get_wrap_fixtures_cached(item.config, n_workers), item
+            )
             item.obj = wrap_function_parallel(
                 item.obj, n_workers, n_iterations, wrap_fixtures
             )

@@ -138,9 +138,13 @@ requested directly by tests, and will return 0 when requested by other fixtures.
 ### Extending per-thread fixture kwargs
 
 When pytest-run-parallel wraps tests for multiple threads and/or iterations, it
-calls `pytest_run_parallel_get_wrap_fixtures(n_workers)` once per session with
-the configured `--parallel-threads` value. Each implementation may return
-`None` (skip) or a dict mapping fixture names to transform callables:
+calls `pytest_run_parallel_get_wrap_fixtures(n_workers)` at collection time.
+`n_workers` is the number of threads the wrapped test will actually use, which
+markers like `force_parallel_threads` may set to a different value than the
+`--parallel-threads` option. Results are cached per distinct thread count, so
+the hook runs once per count rather than once per test. Each implementation
+may return `None` (skip) or a dict mapping fixture names to transform
+callables:
 
 ```python
 def transform(fixturevalue, *, thread_index):
@@ -150,15 +154,18 @@ def transform(fixturevalue, *, thread_index):
 Transforms may also be generators: the yielded value is used as the fixture
 value, and after the test body the generator is resumed for teardown. When
 several generator transforms run for a worker/iteration, teardowns run in
-reverse setup order.
+reverse setup order. An exception raised by a transform fails the test in
+every thread.
 
 Per test, only transforms for fixtures requested directly by that test are
 kept. The plugin shallow-copies the fixture kwargs, then applies those
 transforms in order, chaining values. Dicts from multiple hookimpls are merged
-by appending transforms per fixture name (the same name registered twice runs
-both). The built-in implementation wraps `tmp_path` and `tmpdir` (when
-configured `n_workers > 1`). `thread_index` and `iteration_index` are set
-directly by the plugin.
+per fixture name, and the same name registered twice runs both transforms,
+chained. Transforms from more specific hookimpls (which pluggy calls first,
+such as one in a nested `conftest.py`) are applied last, so they can wrap or
+override the others. The built-in implementation wraps `tmp_path` and `tmpdir`
+(when `n_workers > 1`). `thread_index` and `iteration_index` are set directly
+by the plugin.
 
 Example `conftest.py`:
 

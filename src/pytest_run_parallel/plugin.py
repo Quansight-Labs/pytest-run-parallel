@@ -1,4 +1,5 @@
 import functools
+import inspect
 import os
 import re
 import sys
@@ -34,7 +35,85 @@ GIL_ENABLED_ERROR_TEXT = (
 )
 
 
-def wrap_function_parallel(fn, n_workers, n_iterations):
+def _get_thread_setups(config, n_workers):
+    """Merge hook results into name -> [transform, ...]."""
+    results = config.hook.pytest_run_parallel_get_thread_setups(n_workers=n_workers)
+    thread_setups = {}
+    for result in results:
+        if not result:
+            continue
+        for name, transform in result.items():
+            # pluggy calls the most specific hookimpl first, so insert at
+            # the beginning to apply its transform last, letting it wrap or
+            # override the transforms of less specific hookimpls.
+            thread_setups.setdefault(name, []).insert(0, transform)
+    return thread_setups
+
+
+def _thread_setups_for_item(thread_setups, item):
+    """Per-test subset of the global thread-setups map."""
+    fixtures = getattr(item, "fixturenames", ())
+    return {
+        name: transforms
+        for name, transforms in thread_setups.items()
+        if name in fixtures
+    }
+
+
+def _run_thread_setup_teardowns(teardowns):
+    """Resume generator transforms after yield, in reverse setup order."""
+    errors = []
+    for gen in reversed(teardowns):
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        except Exception as e:
+            errors.append(e)
+        else:
+            gen.close()
+    if errors:
+        raise errors[0]
+
+
+def _apply_thread_setups(
+    kwargs, thread_setups, *, thread_index, iteration_index, n_workers
+):
+    worker_kwargs = dict(kwargs)
+    if "iteration_index" in worker_kwargs:
+        worker_kwargs["iteration_index"] = iteration_index
+    if n_workers > 1 and "thread_index" in worker_kwargs:
+        worker_kwargs["thread_index"] = thread_index
+
+    teardowns = []
+    try:
+        for name, transforms in thread_setups.items():
+            if name not in worker_kwargs:
+                continue
+            value = worker_kwargs[name]
+            for transform in transforms:
+                result = transform(value, thread_index=thread_index)
+                if inspect.isgenerator(result):
+                    value = next(result)
+                    teardowns.append(result)
+                else:
+                    value = result
+            worker_kwargs[name] = value
+    except BaseException:
+        try:
+            _run_thread_setup_teardowns(teardowns)
+        except Exception:
+            # Surface the original transform error, not one raised while
+            # unwinding the transforms that had already run.
+            pass
+        raise
+    return worker_kwargs, teardowns
+
+
+def wrap_function_parallel(fn, n_workers, n_iterations, thread_setups=None):
+    if thread_setups is None:
+        thread_setups = {}
+
     @functools.wraps(fn)
     def inner(*args, **kwargs):
         errors = []
@@ -57,46 +136,53 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
             def closure(*args, **kwargs):
                 # "smuggling" thread_index into closure with args
                 thread_index, args = args[0], args[1:]
-                # modifying fixtures
-                if n_workers > 1:
-                    if "thread_index" in kwargs:
-                        kwargs["thread_index"] = thread_index
-                    if "tmp_path" in kwargs:
-                        kwargs["tmp_path"] = (
-                            kwargs["tmp_path"] / f"thread_{thread_index!s}"
-                        )
-                        kwargs["tmp_path"].mkdir(exist_ok=True)
-                    if "tmpdir" in kwargs:
-                        kwargs["tmpdir"] = kwargs["tmpdir"].ensure(
-                            f"thread_{thread_index!s}", dir=True
-                        )
 
-                for i in range(n_iterations):
-                    if "iteration_index" in kwargs:
-                        kwargs["iteration_index"] = i
-
-                    barrier.wait()
+                for iteration_index in range(n_iterations):
                     try:
-                        fn(*args, **kwargs)
-                    except Warning:
-                        pass
+                        worker_kwargs, teardowns = _apply_thread_setups(
+                            kwargs,
+                            thread_setups,
+                            thread_index=thread_index,
+                            iteration_index=iteration_index,
+                            n_workers=n_workers,
+                        )
                     except Exception as e:
                         errors.append(e)
-                    except _pytest.outcomes.Skipped as s:
-                        nonlocal skip
-                        skip = s.msg
-                    except _pytest.outcomes.Failed as f:
-                        nonlocal failed
-                        failed = f
+                        # Break the barrier so the other threads do not wait
+                        # forever for this one.
+                        barrier.abort()
+                        return
+
+                    try:
+                        try:
+                            barrier.wait()
+                        except threading.BrokenBarrierError:
+                            # Another thread failed during startup or while
+                            # applying its fixture transforms.
+                            return
+                        try:
+                            fn(*args, **worker_kwargs)
+                        except Warning:
+                            pass
+                        except Exception as e:
+                            errors.append(e)
+                        except _pytest.outcomes.Skipped as s:
+                            nonlocal skip
+                            skip = s.msg
+                        except _pytest.outcomes.Failed as f:
+                            nonlocal failed
+                            failed = f
+                    finally:
+                        try:
+                            _run_thread_setup_teardowns(teardowns)
+                        except Exception as e:
+                            errors.append(e)
 
             workers = []
             for i in range(0, n_workers):
-                worker_kwargs = kwargs
                 # "smuggling" i into closure with args to use for thread_index fixture
                 workers.append(
-                    threading.Thread(
-                        target=closure, args=(i, *args), kwargs=worker_kwargs
-                    )
+                    threading.Thread(target=closure, args=(i, *args), kwargs=kwargs)
                 )
 
             num_completed = 0
@@ -151,6 +237,7 @@ class RunParallelPlugin:
         self.unsafe_fixtures = construct_thread_unsafe_fixtures(config)
         self.thread_unsafe = {}
         self.run_in_parallel = {}
+        self._thread_setups_cache = {}
 
     def skipped_or_not_parallel(self, *, plural):
         if plural:
@@ -256,6 +343,15 @@ class RunParallelPlugin:
         for item in session.items:
             self._handle_collected_item(item)
 
+    def _get_thread_setups_cached(self, config, n_workers):
+        # The hook is called with the thread count each wrapped test will
+        # actually use, which markers like force_parallel_threads may set
+        # to a different value than the --parallel-threads option. Cache
+        # per distinct count so the hook runs once per count, not per test.
+        if n_workers not in self._thread_setups_cache:
+            self._thread_setups_cache[n_workers] = _get_thread_setups(config, n_workers)
+        return self._thread_setups_cache[n_workers]
+
     def _handle_collected_item(self, item):
         if isinstance(item, _pytest.doctest.DoctestItem):
             self._mark_test_thread_unsafe(
@@ -303,7 +399,12 @@ class RunParallelPlugin:
 
         if n_workers > 1 or n_iterations > 1:
             original_globals = item.obj.__globals__
-            item.obj = wrap_function_parallel(item.obj, n_workers, n_iterations)
+            thread_setups = _thread_setups_for_item(
+                self._get_thread_setups_cached(item.config, n_workers), item
+            )
+            item.obj = wrap_function_parallel(
+                item.obj, n_workers, n_iterations, thread_setups
+            )
             for name in original_globals:
                 if name not in item.obj.__globals__:
                     item.obj.__globals__[name] = original_globals[name]
@@ -415,13 +516,13 @@ def num_iterations(request):
     return get_num_iterations(request.node)[0]
 
 
-# overwritten by wrap_function_parallel when using multiple threads
+# overwritten when using multiple threads
 @pytest.fixture
 def thread_index():
     return 0
 
 
-# overwritten by wrap_function_parallel when using multiple iterations
+# overwritten when using multiple iterations
 @pytest.fixture
 def iteration_index():
     return 0
@@ -430,6 +531,32 @@ def iteration_index():
 @pytest.fixture
 def thread_comp(num_parallel_threads):
     return ThreadComparator(num_parallel_threads)
+
+
+@pytest.hookimpl
+def pytest_run_parallel_get_thread_setups(n_workers):
+    """Built-in per-fixture transforms for parallel execution."""
+    if n_workers <= 1:
+        return None
+
+    def _tmp_path(value, *, thread_index):
+        path = value / f"thread_{thread_index!s}"
+        path.mkdir(exist_ok=True)
+        return path
+
+    def _tmpdir(value, *, thread_index):
+        return value.ensure(f"thread_{thread_index!s}", dir=True)
+
+    return {
+        "tmp_path": _tmp_path,
+        "tmpdir": _tmpdir,
+    }
+
+
+def pytest_addhooks(pluginmanager):
+    from pytest_run_parallel import hooks as run_parallel_hooks
+
+    pluginmanager.add_hookspecs(run_parallel_hooks)
 
 
 def pytest_configure(config):

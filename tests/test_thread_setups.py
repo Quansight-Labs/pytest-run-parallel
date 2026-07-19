@@ -2,13 +2,13 @@ import pytest
 from _helpers import passing_status
 
 
-def test_wrap_fixtures_hook_can_transform_fixture(pytester: pytest.Pytester) -> None:
+def test_thread_setups_hook_can_transform_fixture(pytester: pytest.Pytester) -> None:
     pytester.makeconftest(
         """
         import pytest
 
         @pytest.hookimpl
-        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+        def pytest_run_parallel_get_thread_setups(n_workers):
             def transform_marker(value, *, thread_index):
                 return f"{thread_index}:{value}"
 
@@ -36,13 +36,13 @@ def test_wrap_fixtures_hook_can_transform_fixture(pytester: pytest.Pytester) -> 
     result.stdout.fnmatch_lines([f"*::test_marker {passing_status(2)}*"])
 
 
-def test_wrap_fixtures_hook_none_is_skipped(pytester: pytest.Pytester) -> None:
+def test_thread_setups_hook_none_is_skipped(pytester: pytest.Pytester) -> None:
     pytester.makeconftest(
         """
         import pytest
 
         @pytest.hookimpl
-        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+        def pytest_run_parallel_get_thread_setups(n_workers):
             return None
         """
     )
@@ -57,7 +57,7 @@ def test_wrap_fixtures_hook_none_is_skipped(pytester: pytest.Pytester) -> None:
     result.stdout.fnmatch_lines([f"*::test_thread_index {passing_status(2)}*"])
 
 
-def test_wrap_fixtures_hook_chains_duplicate_fixture_transforms(
+def test_thread_setups_hook_chains_duplicate_fixture_transforms(
     pytester: pytest.Pytester,
 ) -> None:
     pytester.makeconftest(
@@ -66,7 +66,7 @@ def test_wrap_fixtures_hook_chains_duplicate_fixture_transforms(
 
         class FirstPlugin:
             @pytest.hookimpl(tryfirst=True)
-            def pytest_run_parallel_get_wrap_fixtures(self, n_workers):
+            def pytest_run_parallel_get_thread_setups(self, n_workers):
                 def first(value, *, thread_index):
                     return value + ["first"]
 
@@ -74,7 +74,7 @@ def test_wrap_fixtures_hook_chains_duplicate_fixture_transforms(
 
         class SecondPlugin:
             @pytest.hookimpl(trylast=True)
-            def pytest_run_parallel_get_wrap_fixtures(self, n_workers):
+            def pytest_run_parallel_get_thread_setups(self, n_workers):
                 def second(value, *, thread_index):
                     return value + ["second"]
 
@@ -104,7 +104,7 @@ def test_wrap_fixtures_hook_chains_duplicate_fixture_transforms(
     result.stdout.fnmatch_lines([f"*::test_steps {passing_status(2)}*"])
 
 
-def test_wrap_fixtures_hook_generator_teardown_reverse_order(
+def test_thread_setups_hook_generator_teardown_reverse_order(
     pytester: pytest.Pytester,
 ) -> None:
     pytester.makeconftest(
@@ -115,7 +115,7 @@ def test_wrap_fixtures_hook_generator_teardown_reverse_order(
 
         class OuterPlugin:
             @pytest.hookimpl(tryfirst=True)
-            def pytest_run_parallel_get_wrap_fixtures(self, n_workers):
+            def pytest_run_parallel_get_thread_setups(self, n_workers):
                 def outer(value, *, thread_index):
                     log.append(f"setup-outer-{thread_index}")
                     yield value
@@ -125,7 +125,7 @@ def test_wrap_fixtures_hook_generator_teardown_reverse_order(
 
         class InnerPlugin:
             @pytest.hookimpl(trylast=True)
-            def pytest_run_parallel_get_wrap_fixtures(self, n_workers):
+            def pytest_run_parallel_get_thread_setups(self, n_workers):
                 def inner(value, *, thread_index):
                     log.append(f"setup-inner-{thread_index}")
                     yield f"{value}:{thread_index}"
@@ -172,7 +172,7 @@ def test_wrap_fixtures_hook_generator_teardown_reverse_order(
     )
 
 
-def test_wrap_fixtures_only_applies_to_direct_test_fixtures(
+def test_thread_setups_only_applies_to_direct_test_fixtures(
     pytester: pytest.Pytester,
 ) -> None:
     """Transforms for fixtures not requested by the test must not run."""
@@ -183,7 +183,7 @@ def test_wrap_fixtures_only_applies_to_direct_test_fixtures(
         calls = []
 
         @pytest.hookimpl
-        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+        def pytest_run_parallel_get_thread_setups(n_workers):
             def transform_unused(value, *, thread_index):
                 calls.append("unused")
                 return value
@@ -210,7 +210,7 @@ def test_wrap_fixtures_only_applies_to_direct_test_fixtures(
     result.assert_outcomes(passed=1)
 
 
-def test_wrap_fixtures_skipped_when_configured_workers_is_one(
+def test_thread_setups_skipped_when_configured_workers_is_one(
     pytester: pytest.Pytester,
 ) -> None:
     """Built-in returns None when configured n_workers <= 1."""
@@ -224,7 +224,7 @@ def test_wrap_fixtures_skipped_when_configured_workers_is_one(
     result.assert_outcomes(passed=1)
 
 
-def test_wrap_fixtures_transform_failure_fails_test_without_hanging(
+def test_thread_setups_transform_failure_fails_test_without_hanging(
     pytester: pytest.Pytester,
 ) -> None:
     """A transform error must abort the barrier instead of deadlocking."""
@@ -233,7 +233,7 @@ def test_wrap_fixtures_transform_failure_fails_test_without_hanging(
         import pytest
 
         @pytest.hookimpl
-        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+        def pytest_run_parallel_get_thread_setups(n_workers):
             def bad(value, *, thread_index):
                 if thread_index == 1:
                     raise RuntimeError("transform failed in thread 1")
@@ -263,7 +263,7 @@ def test_wrap_fixtures_transform_failure_fails_test_without_hanging(
     )
 
 
-def test_wrap_fixtures_teardown_runs_when_test_fails(
+def test_thread_setups_teardown_runs_when_test_fails(
     pytester: pytest.Pytester,
 ) -> None:
     pytester.makeconftest(
@@ -276,7 +276,7 @@ def test_wrap_fixtures_teardown_runs_when_test_fails(
         counts = {"teardown": 0}
 
         @pytest.hookimpl
-        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+        def pytest_run_parallel_get_thread_setups(n_workers):
             def transform(value, *, thread_index):
                 yield value
                 with lock:
@@ -309,7 +309,7 @@ def test_wrap_fixtures_teardown_runs_when_test_fails(
     )
 
 
-def test_wrap_fixtures_most_specific_conftest_wins(
+def test_thread_setups_most_specific_conftest_wins(
     pytester: pytest.Pytester,
 ) -> None:
     pytester.makeconftest(
@@ -321,7 +321,7 @@ def test_wrap_fixtures_most_specific_conftest_wins(
             return "base"
 
         @pytest.hookimpl
-        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+        def pytest_run_parallel_get_thread_setups(n_workers):
             def transform(value, *, thread_index):
                 return "root"
 
@@ -334,7 +334,7 @@ def test_wrap_fixtures_most_specific_conftest_wins(
                 import pytest
 
                 @pytest.hookimpl
-                def pytest_run_parallel_get_wrap_fixtures(n_workers):
+                def pytest_run_parallel_get_thread_setups(n_workers):
                     def transform(value, *, thread_index):
                         return "sub"
 
@@ -350,7 +350,7 @@ def test_wrap_fixtures_most_specific_conftest_wins(
     result.stdout.fnmatch_lines([f"*::test_resource {passing_status(2)}*"])
 
 
-def test_wrap_fixtures_hook_not_called_when_not_wrapped(
+def test_thread_setups_hook_not_called_when_not_wrapped(
     pytester: pytest.Pytester,
 ) -> None:
     pytester.makeconftest(
@@ -358,7 +358,7 @@ def test_wrap_fixtures_hook_not_called_when_not_wrapped(
         import pytest
 
         @pytest.hookimpl
-        def pytest_run_parallel_get_wrap_fixtures(n_workers):
+        def pytest_run_parallel_get_thread_setups(n_workers):
             raise RuntimeError("hook should not be called")
         """
     )
@@ -372,7 +372,7 @@ def test_wrap_fixtures_hook_not_called_when_not_wrapped(
     result.stdout.fnmatch_lines(["*::test_ok PASSED*"])
 
 
-def test_wrap_fixtures_forced_parallel_gets_tmp_path_isolation(
+def test_thread_setups_forced_parallel_gets_tmp_path_isolation(
     pytester: pytest.Pytester,
 ) -> None:
     """Built-ins must use the per-test thread count, not the CLI value"""

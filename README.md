@@ -135,10 +135,10 @@ temporary directory in that fixture.
 When using the fixtures `thread_index` and `iteration_index`, they should be
 requested directly by tests, and will return 0 when requested by other fixtures.
 
-### Extending per-thread fixture kwargs
+### Per-thread fixture setups
 
 When pytest-run-parallel wraps tests for multiple threads and/or iterations, it
-calls `pytest_run_parallel_get_wrap_fixtures(n_workers)` at collection time.
+calls `pytest_run_parallel_get_thread_setups(n_workers)` at collection time.
 `n_workers` is the number of threads the wrapped test will actually use, which
 markers like `force_parallel_threads` may set to a different value than the
 `--parallel-threads` option. Results are cached per distinct thread count, so
@@ -173,7 +173,7 @@ Example `conftest.py`:
 import pytest
 
 @pytest.hookimpl
-def pytest_run_parallel_get_wrap_fixtures(n_workers):
+def pytest_run_parallel_get_thread_setups(n_workers):
     def transform_db(value, *, thread_index):
         return value.for_thread(thread_index)
 

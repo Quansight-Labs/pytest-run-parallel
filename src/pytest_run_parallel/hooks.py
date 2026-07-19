@@ -2,10 +2,10 @@ import pytest
 
 
 @pytest.hookspec
-def pytest_run_parallel_get_wrap_fixtures(n_workers):
+def pytest_run_parallel_get_thread_setups(n_workers):
     """Return None, or a dict mapping fixture names to transform callables.
 
-    Called at collection time to build the wrap-fixtures map. ``n_workers``
+    Called at collection time to build the thread-setups map. ``n_workers``
     is the number of threads that a wrapped test will actually use, which
     markers such as ``force_parallel_threads`` may set to a different value
     than the ``--parallel-threads`` option. Results are cached per distinct

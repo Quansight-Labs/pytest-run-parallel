@@ -38,11 +38,6 @@ def _add_temp_subdirectory(kwargs: dict[str, object], subdir: str) -> None:
     """
     Add a subdirectory with the given name to tmp_path/tmpdir fixtures.
     """
-    if "tmp_path" in kwargs:
-        kwargs["tmp_path"] = kwargs["tmp_path"] / subdir
-        kwargs["tmp_path"].mkdir(exist_ok=True)
-    if "tmpdir" in kwargs:
-        kwargs["tmpdir"] = kwargs["tmpdir"].ensure(subdir, dir=True)
 
 
 def wrap_function_parallel(fn, n_workers, n_iterations):
@@ -72,12 +67,19 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
                 if n_workers > 1:
                     if "thread_index" in kwargs:
                         kwargs["thread_index"] = thread_index
-                    _add_temp_subdirectory(kwargs, f"thread_{thread_index!s}")
 
                 for i in range(n_iterations):
                     if "iteration_index" in kwargs:
                         kwargs["iteration_index"] = i
-                    _add_temp_subdirectory(kwargs, f"iteration_{i}")
+                    if "tmp_path" in kwargs:
+                        kwargs["tmp_path"] = (
+                            kwargs["tmp_path"] / f"thread_{thread_index!s}_iter_{i}"
+                        )
+                        kwargs["tmp_path"].mkdir(exist_ok=True)
+                    if "tmpdir" in kwargs:
+                        kwargs["tmpdir"] = kwargs["tmpdir"].ensure(
+                            f"thread_{thread_index!s}_iter_{i}", dir=True
+                        )
 
                     barrier.wait()
                     try:

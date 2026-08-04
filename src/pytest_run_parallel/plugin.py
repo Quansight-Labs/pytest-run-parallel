@@ -69,7 +69,7 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
                         kwargs["tmp_path"] = (
                             kwargs["tmp_path"] / f"thread_{thread_index!s}_iter_{i}"
                         )
-                        kwargs["tmp_path"].mkdir(exist_ok=True)
+                        kwargs["tmp_path"].mkdir()
                     if "tmpdir" in kwargs:
                         kwargs["tmpdir"] = kwargs["tmpdir"].ensure(
                             f"thread_{thread_index!s}_iter_{i}", dir=True

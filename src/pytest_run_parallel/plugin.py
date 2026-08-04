@@ -34,12 +34,6 @@ GIL_ENABLED_ERROR_TEXT = (
 )
 
 
-def _add_temp_subdirectory(kwargs: dict[str, object], subdir: str) -> None:
-    """
-    Add a subdirectory with the given name to tmp_path/tmpdir fixtures.
-    """
-
-
 def wrap_function_parallel(fn, n_workers, n_iterations):
     @functools.wraps(fn)
     def inner(*args, **kwargs):

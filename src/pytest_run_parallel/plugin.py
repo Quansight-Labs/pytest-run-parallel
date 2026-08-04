@@ -61,19 +61,22 @@ def wrap_function_parallel(fn, n_workers, n_iterations):
                 if n_workers > 1:
                     if "thread_index" in kwargs:
                         kwargs["thread_index"] = thread_index
-                    if "tmp_path" in kwargs:
-                        kwargs["tmp_path"] = (
-                            kwargs["tmp_path"] / f"thread_{thread_index!s}"
-                        )
-                        kwargs["tmp_path"].mkdir(exist_ok=True)
-                    if "tmpdir" in kwargs:
-                        kwargs["tmpdir"] = kwargs["tmpdir"].ensure(
-                            f"thread_{thread_index!s}", dir=True
-                        )
+
+                base_tmp_path = kwargs.get("tmp_path", None)
+                base_tmpdir = kwargs.get("tmpdir", None)
 
                 for i in range(n_iterations):
                     if "iteration_index" in kwargs:
                         kwargs["iteration_index"] = i
+                    if base_tmp_path is not None:
+                        kwargs["tmp_path"] = (
+                            base_tmp_path / f"thread_{thread_index!s}_iter_{i}"
+                        )
+                        kwargs["tmp_path"].mkdir()
+                    if base_tmpdir is not None:
+                        kwargs["tmpdir"] = base_tmpdir.ensure(
+                            f"thread_{thread_index!s}_iter_{i}", dir=True
+                        )
 
                     barrier.wait()
                     try:

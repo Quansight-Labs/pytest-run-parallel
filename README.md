@@ -122,9 +122,7 @@ those fixtures are shared between threads.
 
 - Modifications to existing fixtures:
     - `tmp_path` and `tmpdir`: Patched to be thread-safe, with individual
-    subdirectories being created for each thread. Subdirectories are not
-    created for each iteration, so you may see issues with reused temporary
-    directions when using `--iterations`.
+      subdirectories being created for each thread and test iteration if using `--iterations`.
 
 While pytest-run-parallel has special handling for the `tmp_path` and `tmpdir`
 fixtures to ensure that each thread has a private temporary directory, the
